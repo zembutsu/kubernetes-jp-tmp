@@ -1,5 +1,6 @@
 ---
 title: Troubleshooting kubeadm
+weight: 80
 ---
 
 {{% capture overview %}}
