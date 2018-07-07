@@ -1,7 +1,7 @@
 ---
 reviewers:
 - sig-cluster-lifecycle
-title: 高可用性クラスタを kubeadm で作成
+title: kubeadm で高可用性クラスタを作成
 content_template: templates/task
 weight: 60
 ---

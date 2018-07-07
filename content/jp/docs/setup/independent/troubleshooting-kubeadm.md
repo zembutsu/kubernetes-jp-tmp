@@ -1,14 +1,16 @@
 ---
-title: Troubleshooting kubeadm
+title: kubeadm のトラブルシューティング
 weight: 80
 ---
 
-{{% capture overview %}}
-
+<!--
 As with any program, you might run into an error using or operating it. Below we have listed 
 common failure scenarios and have provided steps that will help you to understand and hopefully
 fix the problem.
+-->
+あらゆるプログラムと同様、使用および操作時は、エラーに遭遇する場合があります。以下の一覧は共通する障害シナリオと対応手順です。状況の理解と、願わくば問題解決に役立つでしょう。
 
+<!--
 If your problem is not listed below, please follow the following steps:
 
 - If you think your problem is a bug with kubeadm:
@@ -21,55 +23,108 @@ If your problem is not listed below, please follow the following steps:
 
 If your cluster is in an error state, you may have trouble in the configuration if you see Pod statuses like `RunContainerError`,
 `CrashLoopBackOff` or `Error`. If this is the case, please read below.
+-->
 
-{{% /capture %}}
+以下に掲載されていない問題があれば、次の手順に従ってください。
 
+- kubeadm のバグによる問題と考えられる場合:
+  - [github.com/kubernetes/kubeadm](https://github.com/kubernetes/kubeadm/issues) に移動し、これまでの issue を検索します。
+  - issue が無ければ、[issue をオープン](https://github.com/kubernetes/kubeadm/issues/new) し、issue テンプレートに従います。
+
+- kubeadm か kubernetes の動作か確信が持てない場合、質問に対する支援を受けたい場合は、 Slack の #kubeadm でお訊ねいただくか、StackOverflow でオープンに質問してください。関連タグには  `#kubernetes` と `#kubeadm` があれば皆に役立つでしょう。
+
+もしもクラスタがエラー状態の場合、ポッド状態が  `RunContainerError`、`CrashLoopBackOff`、`Error`であれば、設定上の問題の可能性があります。そのような場合は、以下をご覧ください。
+
+<!--
 #### `ebtables` or some similar executable not found during installation
+-->
+#### `ebtables` や類似実行コマンドがインストール中に見つからない
 
+<!--
 If you see the following warnings while running `kubeadm init`
+-->
+`kubeadm init` 実行時に以下のような警告が表示される場合
 
 ```sh
 [preflight] WARNING: ebtables not found in system path
 [preflight] WARNING: ethtool not found in system path
 ```
 
+<!--
 Then you may be missing `ebtables`, `ethtool` or a similar executable on your node. You can install them with the following commands:
+-->
 
+`ebtables` や `ethtool`等がノード上に無い可能性があります。次のコマンドでインストールできます。
+
+<!--
 - For Ubuntu/Debian users, run `apt install ebtables ethtool`.
 - For CentOS/Fedora users, run `yum install ebtables ethtool`.
+-->
 
+- Ubuntu/Debian をお使いの場合、`apt install ebtables ethtool`を実行します。
+- CentOS/Fedora をお使いの場合、`yum install ebtables ethtool`を実行します。
+
+<!--
 #### kubeadm blocks waiting for control plane during installation
+-->
+#### コントロール・プレーンのインストール時、kubeadm が固まる
 
+<!--
 If you notice that `kubeadm init` hangs after printing out the following line:
+-->
+
+以下の行を表示したあと `kubeadm init` が固まる場合、
 
 ```sh
 [apiclient] Created API client, waiting for the control plane to become ready
 ```
-
+<!--
 This may be caused by a number of problems. The most common are:
+-->
+これには、いくつかの問題発生が考えられます。多くの場合で共通するのは、
 
+<!--
 - network connection problems. Check that your machine has full network connectivity before continuing.
 - the default cgroup driver configuration for the kubelet differs from that used by Docker.
   Check the system log file (e.g. `/var/log/message`) or examine the output from `journalctl -u kubelet`. If you see something like the following:
+-->
+- ネットワーク接続の問題。作業をする前に、マシンのネットワーク疎通が完全か確認します。
+- kubelet 用のデフォルト cgroup ドライバ設定が、Docker で使っているものと異なる場合。システムのログファイル（例： `/var/log/message`）を確認するか、 `journalctl -u kubelet` の出力を調査します。次のようなメッセージが出る場合は
+
 
   ```shell
   error: failed to run Kubelet: failed to create kubelet:
   misconfiguration: kubelet cgroup driver: "systemd" is different from docker cgroup driver: "cgroupfs"
   ```
-
+<!--
   There are two common ways to fix the cgroup driver problem:
+  -->
+  cgroup ドライバ問題を解決するには、２つの共通手法があります。
   
+  <!--
  1. Install docker again following instructions
   [here](/docs/setup/independent/install-kubeadm/#installing-docker).
  1. Change the kubelet config to match the Docker cgroup driver manually, you can refer to
     [Configure cgroup driver used by kubelet on Master Node](/docs/setup/independent/install-kubeadm/#configure-cgroup-driver-used-by-kubelet-on-master-node)
     for detailed instructions.
+-->
+1.   [こちら](/docs/setup/independent/install-kubeadm/#installing-docker) の手順に従い、Docker を再インストールします。
+1. Docker cgroup ドライバと kubelet の設定が同じになるよう、手動で設定します。詳細な手順は  [マスタ・ノード上の kubelet が使う cgroup ドライバの設定](/jp/docs/setup/independent/install-kubeadm/#configure-cgroup-driver-used-by-kubelet-on-master-node)
 
+<!--
 - control plane Docker containers are crashlooping or hanging. You can check this by running `docker ps` and investigating each container by running `docker logs`.
+-->
+- コントロール・プレーン Docker コンテナがクラッシュするか固まる場合、 `docker ps` で実行しているかどうかの確認と、各コンテナを `docker logs` で調査します。
 
+<!--
 #### kubeadm blocks when removing managed containers
+-->
+#### 管理用コンテナの削除時、kubeadm が固まる
 
+<!--
 The following could happen if Docker halts and does not remove any Kubernetes-managed containers:
+-->
+Docker の処理が中断し、Kubernetes が管理するコンテナを削除できなくなる可能性があります。
 
 ```bash
 sudo kubeadm reset
@@ -80,23 +135,36 @@ sudo kubeadm reset
 (block)
 ```
 
+<!--
 A possible solution is to restart the Docker service and then re-run `kubeadm reset`:
+-->
+解決策としては、Docker サービスを再起動し、再び `kubeadm reset` を実行します。
 
 ```bash
 sudo systemctl restart docker.service
 sudo kubeadm reset
 ```
 
+<!--
 Inspecting the logs for docker may also be useful:
+-->
+また、docker に対するログの調査も役立つでしょう。
 
 ```sh
 journalctl -ul docker
 ```
 
+<!--
 #### Pods in `RunContainerError`, `CrashLoopBackOff` or `Error` state
+-->
+#### ポッドの状態が  `RunContainerError`、`CrashLoopBackOff`、`Error` 
 
+<!--
 Right after `kubeadm init` there should not be any pods in these states.
+-->
+`kubeadm init` 直後であれば、ポッドはこのような状態になりません。
 
+<!--
 - If there are pods in one of these states _right after_ `kubeadm init`, please open an
   issue in the kubeadm repo. `coredns` (or `kube-dns`) should be in the `Pending` state
   until you have deployed the network solution.
@@ -106,54 +174,85 @@ Right after `kubeadm init` there should not be any pods in these states.
   likely that the Pod Network solution that you installed is somehow broken. You
   might have to grant it more RBAC privileges or use a newer version. Please file
   an issue in the Pod Network providers' issue tracker and get the issue triaged there.
+-->
+- `kubeadm init` 実行直後、これらの状態のポッドがあるようでしたら、 kubeadm リポジトリで issue を開いてください。ネットワーク・ソリューションを展開する前に、 `coredns` （あるいは `kube-dns`）は `Pending` 状態であるべきです。
+- ネットワーク・ソリューションを展開した後、ポッドが `RunContainerError`、`CrashLoopBackOff`、`Error` であり、 `coredns`（あるいは`kube-dns`）で何も起こっていなければ、ポッド・ネットワーク・ソリューションが DNS サーバに対して何もしていない可能性があります。これは、インストールしたポッド・ネットワーク・ソリューションで何か壊れている可能性があります。RBAC 権限を多く付与するか、あるいは、新しいバージョンを使います。ポッド・ネットワーク・プロバイダの issue トラッカーに問題を提出し、issue を取り上げてもらいます。
 
+<!--
 #### `coredns` (or `kube-dns`) is stuck in the `Pending` state
+-->
+`coredns`（か `kube-dns`）が `Pending` 状態のまま固まっています
 
+<!--
 This is **expected** and part of the design. kubeadm is network provider-agnostic, so the admin
 should [install the pod network solution](/docs/concepts/cluster-administration/addons/)
 of choice. You have to install a Pod Network
 before CoreDNS may deployed fully. Hence the `Pending` state before the network is set up.
+-->
+これは **予想されうる** もので、設計の一部です。kubeadm はネットワーク・プロバイダが何であろうと動作します。そのため、管理者が[インストールするポッド・ネットワーク・ソリューション(/jp/docs/concepts/cluster-administration/addons/)を選ぶべきです。CoreDNS を展開する前に、ポッド・ネットワークのインストールを
 
+<!--
 #### `HostPort` services do not work
+-->
 
+<!--
 The `HostPort` and `HostIP` functionality is available depending on your Pod Network
 provider. Please contact the author of the Pod Network solution to find out whether
 `HostPort` and `HostIP` functionality are available.
+-->
 
+<!--
 Calico, Canal, and Flannel CNI providers are verified to support HostPort.
+-->
 
+<!--
 For more information, see the [CNI portmap documentation](https://github.com/containernetworking/plugins/blob/master/plugins/meta/portmap/README.md).
+-->
 
+<!--
 If your network provider does not support the portmap CNI plugin, you may need to use the [NodePort feature of
 services](/docs/concepts/services-networking/service/#type-nodeport) or use `HostNetwork=true`.
+-->
 
+<!--
 #### Pods are not accessible via their Service IP
+-->
 
+<!--
 - Many network add-ons do not yet enable [hairpin mode](https://kubernetes.io/docs/tasks/debug-application-cluster/debug-service/#a-pod-cannot-reach-itself-via-service-ip)
   which allows pods to access themselves via their Service IP. This is an issue related to
   [CNI](https://github.com/containernetworking/cni/issues/476). Please contact the network
   add-on provider to get the latest status of their support for hairpin mode.
+-->
 
+<!--
 - If you are using VirtualBox (directly or via Vagrant), you will need to
   ensure that `hostname -i` returns a routable IP address. By default the first
   interface is connected to a non-routable host-only network. A work around
   is to modify `/etc/hosts`, see this [Vagrantfile](https://github.com/errordeveloper/k8s-playground/blob/22dd39dfc06111235620e6c4404a96ae146f26fd/Vagrantfile#L11)
   for an example.
+-->
 
+<!--
 #### TLS certificate errors
+-->
 
+<!--
 The following error indicates a possible certificate mismatch.
+-->
 
 ```none
 # kubectl get pods
 Unable to connect to the server: x509: certificate signed by unknown authority (possibly because of "crypto/rsa: verification error" while trying to verify candidate authority certificate "kubernetes")
 ```
 
+<!--
 - Verify that the `$HOME/.kube/config` file contains a valid certificate, and
   regenerate a certificate if necessary. The certificates in a kubeconfig file
   are base64 encoded. The `base64 -d` command can be used to decode the certificate
   and `openssl x509 -text -noout` can be used for viewing the certificate information.
 - Another workaround is to overwrite the existing `kubeconfig` for the "admin" user:
+-->
 
   ```sh
   mv  $HOME/.kube $HOME/.kube.bak
@@ -161,30 +260,42 @@ Unable to connect to the server: x509: certificate signed by unknown authority (
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
   ```
 
+<!--
 #### Default NIC When using flannel as the pod network in Vagrant
+-->
 
+<!--
 The following error might indicate that something was wrong in the pod network:
+-->
 
 ```sh
 Error from server (NotFound): the server could not find the requested resource
 ```
 
+<!--
 - If you're using flannel as the pod network inside Vagrant, then you will have to specify the default interface name for flannel.
 
   Vagrant typically assigns two interfaces to all VMs. The first, for which all hosts are assigned the IP address `10.0.2.15`, is for external traffic that gets NATed.
 
   This may lead to problems with flannel, which defaults to the first interface on a host. This leads to all hosts thinking they have the same public IP address. To prevent this, pass the `--iface eth1` flag to flannel so that the second interface is chosen.
+-->
 
+<!--
 #### Non-public IP used for containers
+-->
 
+<!--
 In some situations `kubectl logs` and `kubectl run` commands may return with the following errors in an otherwise functional cluster:
+-->
 
 ```sh
 Error from server: Get https://10.19.0.41:10250/containerLogs/default/mysql-ddc65b868-glc5m/mysql: dial tcp 10.19.0.41:10250: getsockopt: no route to host
 ```
 
+<!--
 - This may be due to Kubernetes using an IP that can not communicate with other IPs on the seemingly same subnet, possibly by policy of the machine provider.
 - Digital Ocean assigns a public IP to `eth0` as well as a private one to be used internally as anchor for their floating IP feature, yet `kubelet` will pick the latter as the node's `InternalIP` instead of the public one.
+-->
 
   Use `ip addr show` to check for this scenario instead of `ifconfig` because `ifconfig` will not display the offending alias IP address. Alternatively an API endpoint specific to Digital Ocean allows to query for the anchor IP from the droplet:
 
