@@ -189,34 +189,40 @@ should [install the pod network solution](/docs/concepts/cluster-administration/
 of choice. You have to install a Pod Network
 before CoreDNS may deployed fully. Hence the `Pending` state before the network is set up.
 -->
-これは **予想されうる** もので、設計の一部です。kubeadm はネットワーク・プロバイダが何であろうと動作します。そのため、管理者が[インストールするポッド・ネットワーク・ソリューション(/jp/docs/concepts/cluster-administration/addons/)を選ぶべきです。CoreDNS を展開する前に、ポッド・ネットワークのインストールを
+これは **予想されうる** もので、設計の一部です。kubeadm はネットワーク・プロバイダが何であろうと動作します。そのため、管理者が[インストールするポッド・ネットワーク・ソリューション(/jp/docs/concepts/cluster-administration/addons/)を選ぶべきです。CoreDNS を展開する前に、ポッド・ネットワークのインストールを完全に終える必要があります。従って、ネットワークのセットアップ前は `Pending` （保留）の状態となります。
 
 <!--
 #### `HostPort` services do not work
 -->
+#### `HostPort`サービスが動作しません
 
 <!--
 The `HostPort` and `HostIP` functionality is available depending on your Pod Network
 provider. Please contact the author of the Pod Network solution to find out whether
 `HostPort` and `HostIP` functionality are available.
 -->
+`HostPort` と `HostIP`機能が利用できるかどうかは、ポッド・ネットワーク・プロバイダに依存します。ポッド・ネットワーク・ソリューションの開発者に連絡を取り、 `HostPort` と `HostIP`機能が利用可能かどうかご確認ください。
 
 <!--
 Calico, Canal, and Flannel CNI providers are verified to support HostPort.
 -->
+Calico、Canal、Flannel CNI プロバイダは HostProt のサポートが確認されています。
 
 <!--
 For more information, see the [CNI portmap documentation](https://github.com/containernetworking/plugins/blob/master/plugins/meta/portmap/README.md).
 -->
+詳しい情報は [CNI ポートマップ・ドキュメント](https://github.com/containernetworking/plugins/blob/master/plugins/meta/portmap/README.md) をご覧ください。
 
 <!--
 If your network provider does not support the portmap CNI plugin, you may need to use the [NodePort feature of
 services](/docs/concepts/services-networking/service/#type-nodeport) or use `HostNetwork=true`.
 -->
+ネットワーク・プロバイダが CNI プラグインのポートマップ（portmap）に対応していなければ、[サービスのノードポート（ NodePort）機能](/jp/docs/concepts/services-networking/service/#type-nodeport) を使うか、あるいは、 `HostNetwork=true` を使う必要があります。
 
 <!--
 #### Pods are not accessible via their Service IP
 -->
+#### ポッドにサービス IP を通して接続できません
 
 <!--
 - Many network add-ons do not yet enable [hairpin mode](https://kubernetes.io/docs/tasks/debug-application-cluster/debug-service/#a-pod-cannot-reach-itself-via-service-ip)
@@ -224,6 +230,7 @@ services](/docs/concepts/services-networking/service/#type-nodeport) or use `Hos
   [CNI](https://github.com/containernetworking/cni/issues/476). Please contact the network
   add-on provider to get the latest status of their support for hairpin mode.
 -->
+- 多くのネットワーク・アドオンは、まだ [ヘアピン・モード(hairpin mode](/jp/docs/tasks/debug-application-cluster/debug-service/#a-pod-cannot-reach-itself-via-service-ip) が有効ではありません。このモードは、ポットに対してサービス IP を通してアクセス可能にするものです。これは [CNI](https://github.com/containernetworking/cni/issues/476) に間rnenする問題です。ネットワーク・アドオン・プロバイダに対して、ヘアピン・モードの最新のサポート状況についてお訊ねください。
 
 <!--
 - If you are using VirtualBox (directly or via Vagrant), you will need to
@@ -232,14 +239,19 @@ services](/docs/concepts/services-networking/service/#type-nodeport) or use `Hos
   is to modify `/etc/hosts`, see this [Vagrantfile](https://github.com/errordeveloper/k8s-playground/blob/22dd39dfc06111235620e6c4404a96ae146f26fd/Vagrantfile#L11)
   for an example.
 -->
+- VirtualBox を使用している（直接、あるいは Vagrant を経由している）場合、 `hostname -i` が到達可能な IP アドレスを返す必要があります。１つめのインターフェースは、デフォルトでは到達できないホストのみのネットワークに接続します。動作するように `/etc/hosts`の対応が必要ですので、 こちらの [Vagrantfile](https://github.com/errordeveloper/k8s-playground/blob/22dd39dfc06111235620e6c4404a96ae146f26fd/Vagrantfile#L11) 例をご覧ください。
 
 <!--
 #### TLS certificate errors
 -->
+#### TLS 認証エラー
+
 
 <!--
 The following error indicates a possible certificate mismatch.
 -->
+
+以下のエラーは、証明書の不一致がある可能性を示します。
 
 ```none
 # kubectl get pods
@@ -253,6 +265,8 @@ Unable to connect to the server: x509: certificate signed by unknown authority (
   and `openssl x509 -text -noout` can be used for viewing the certificate information.
 - Another workaround is to overwrite the existing `kubeconfig` for the "admin" user:
 -->
+-  `$HOME/.kube/config` ファイルに有効な証明書があるかどうかを確認し、必要に応じて証明書を再作成します。kubeconfig ファイル内の証明書は base64 でエンコード（符号化）されています。 `base64 -d`コマンドを使えば証明書をデコード（復号化）できます。また、証明書の情報を表示するために `openssl x509 -text -noout` を使えます。
+- この方法でうまくいかない時の対処方法は、既存の `admin` ユーザ向け  `kubeconfig` の上書きです。
 
   ```sh
   mv  $HOME/.kube $HOME/.kube.bak
@@ -263,10 +277,12 @@ Unable to connect to the server: x509: certificate signed by unknown authority (
 <!--
 #### Default NIC When using flannel as the pod network in Vagrant
 -->
+#### Vagrant でポッド・ネットワークに flannel 使用時のデフォルト NIC
 
 <!--
 The following error might indicate that something was wrong in the pod network:
 -->
+以下のエラーは、ポッド・ネットワーク内で何らかの問題があるのを示します。
 
 ```sh
 Error from server (NotFound): the server could not find the requested resource
@@ -279,14 +295,21 @@ Error from server (NotFound): the server could not find the requested resource
 
   This may lead to problems with flannel, which defaults to the first interface on a host. This leads to all hosts thinking they have the same public IP address. To prevent this, pass the `--iface eth1` flag to flannel so that the second interface is chosen.
 -->
+- Vagrant 内でポッド・ネットワークを flannel として使用している場合、flannel 用のデフォルト・インターフェース名を指定する必要があります。
+
+通常の Vagrant は、全ての仮想マシンに対して２つのインターフェースを割り当てます。１つは全てのホストが割り当てられる IP アドレス `10.0.2.15` であり、外部に対するトラフィックを NAT （ネットワークのアドレスを変換）します。
+
+ホスト上の１つめのインターフェースがデフォルトなため、 flannel では問題を引き起こします。全てのホストが共通のパブリック IP アドレスを持ってしまうのが予想されます。回避するには flannel に対して `--iface eth1` フラグを与え、２つめのインターフェースを選択します。
 
 <!--
 #### Non-public IP used for containers
 -->
+#### コンテナに対してパブリックではない IP アドレスが割り当て
 
 <!--
 In some situations `kubectl logs` and `kubectl run` commands may return with the following errors in an otherwise functional cluster:
 -->
+`kubectl logs` と `kubectl run`コマンドを実行するような状況で、他のクラスタ機能に関するエラーが返ってくる場合があります。
 
 ```sh
 Error from server: Get https://10.19.0.41:10250/containerLogs/default/mysql-ddc65b868-glc5m/mysql: dial tcp 10.19.0.41:10250: getsockopt: no route to host
@@ -296,32 +319,52 @@ Error from server: Get https://10.19.0.41:10250/containerLogs/default/mysql-ddc6
 - This may be due to Kubernetes using an IP that can not communicate with other IPs on the seemingly same subnet, possibly by policy of the machine provider.
 - Digital Ocean assigns a public IP to `eth0` as well as a private one to be used internally as anchor for their floating IP feature, yet `kubelet` will pick the latter as the node's `InternalIP` instead of the public one.
 -->
+- このようになるのは、Kubernetes が使用する IP アドレスが同じサブネット上の他の IP と通信できないため、マシン提供事業者のポリシーによる影響の可能性があります。
+- Digital Ocean はパブリック IP を `eth0` に割り当てるのと当時に、内部におけるフローティング IP 機能の到達先としても用いています。さらに、 `kubelet` はパブリック IP ではなく、後に続く `InternelIP`（内部IP）を取り上げてしまいます。
 
+<!--
   Use `ip addr show` to check for this scenario instead of `ifconfig` because `ifconfig` will not display the offending alias IP address. Alternatively an API endpoint specific to Digital Ocean allows to query for the anchor IP from the droplet:
+ｰｰ>
+この状況を調べるには `ifconfig` ではなく `ip addr show`を使います。 `ifconfig` は IP アドレスのエイリアス（別名）を表示できないからです。あるいは Digital Ocean の API エンドポイントで、ドロップレット用のアンカー IP を問い合わせできます。
 
   ```sh
   curl http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/address
   ```
 
+<!--
   The workaround is to tell `kubelet` which IP to use using `--node-ip`. When using Digital Ocean, it can be the public one (assigned to `eth0`) or the private one (assigned to `eth1`) should you want to use the optional private network. The [KubeletExtraArgs section of the MasterConfiguration file](https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1alpha2/types.go#L147) can be used for this.
+-->
+他の回避策は、 `kubelet` に `--node-ip` を指定して、どの IP アドレスを使うかを伝える方法です。Digital Ocean では、公開 IP（`eth0` に割り当て）かプライベート IP （`eth1` に割り当て）のうち、どちらをプライベート・ネットワークとして使用するかのオプションで指定すべきでしょう。 [マスタの設定ファイルにある KubeletExtraArgs セクション](https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1alpha2/types.go#L147) が対応しています。
 
+<!--
   Then restart `kubelet`:
+-->
+それから `kubelet` を再開します。
 
   ```sh
   systemctl daemon-reload
   systemctl restart kubelet
   ```
-
+<!--
 #### Services with externalTrafficPolicy=Local are not reachable
+-->
+#### externalTrafficPolicy=Local のサービスに到達不可能
 
+<!--
 On nodes where the hostname for the kubelet is overridden using the `--hostname-override` option, kube-proxy will default to treating 127.0.0.1 as the node IP, which results in rejecting connections for Services configured for `externalTrafficPolicy=Local`. This situation can be verified by checking the output of `kubectl -n kube-system logs <kube-proxy pod name>`:
+-->
+kubelet を使うノード上のホスト名は `--hostname-override`（ホスト名上書き）オプションを使って上書きできます。kube-proxy はデフォルトで `127.0.0.1` をノードの IP として 扱うため、サービス設定を `externalTrafficPolicy=Local` としている場合、接続が拒否される結果になります。この状況では `kubectl -n kube-system logs <kube-proxy ポッド名>` の出力から確認可能です。
 
 ```sh
 W0507 22:33:10.372369       1 server.go:586] Failed to retrieve node info: nodes "ip-10-0-23-78" not found
 W0507 22:33:10.372474       1 proxier.go:463] invalid nodeIP, initializing kube-proxy with 127.0.0.1 as nodeIP
 ```
 
+<!--
 A workaround for this is to modify the kube-proxy DaemonSet in the following way:
+-->
+この次善策としては、kube-proxy の DaemonSet  を以下のように変更します。
+
 
 ```sh
 kubectl -n kube-system patch --type json daemonset kube-proxy -p "$(cat <<'EOF'

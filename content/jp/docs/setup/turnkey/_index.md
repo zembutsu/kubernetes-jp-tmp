@@ -1,3 +1,3 @@
 ---
-title: Turnkey Cloud Solutions
+title: すぐ使えるクラウド・ソリューション
 ---
