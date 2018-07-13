@@ -224,12 +224,14 @@ process supervisor inside the container. Finally, with a single
 application per container, managing the containers becomes tantamount
 to managing deployment of the application.
 -->
-コンテナは小さくて速いので、あるアプリケーションを各コンテナ・イメージに
+コンテナは小さくて速いため、アプリケーションの１つ１つを、それぞれコンテナ・イメージに格納できます。このアプリケーションとイメージが１対１で対応する関係が、コンテナの利点すべてを解き放ちます。コンテナと一体である、不変な（immutable：イミュータブル）コンテナ・イメージにより、デプロイの時間よりも、構築・リリースのための時間を生み出します。これは各アプリケーションがアプリケーションの積み重ね（stack：スタック）に要らないものを組み込む必要がないだけでなく、本番向け基盤環境とも深く関与するからです。コンテナ・イメージを構築・リリースする時間がもたらすのは、開発環境から本番向けへの移動（運搬）が一貫している環境です。同様に、コンテナは VM に比べて非常に透過的なため、監視と管理が容易になります。コンテナのプロセス・ライフサイクルがコンテナ内のプロセス・スーパーバイザによって隠されているというよりは、基盤によって管理されているというのが実体でしょう。最後に、コンテナごとに１つのアプリケーションであれば、コンテナの管理と、アプリケーションを配置（デプロイ）する管理が等しいも同然です。
 
-
-
+<!--
 Summary of container benefits:
+-->
+コンテナ利点の概要：
 
+<!--
 * **Agile application creation and deployment**:
     Increased ease and efficiency of container image creation compared to VM image use.
 * **Continuous development, integration, and deployment**:
@@ -258,20 +260,38 @@ Summary of container benefits:
     Predictable application performance.
 * **Resource utilization**:
     High efficiency and density.
+-->
+* **素早いアプリケーション作成と配置（デプロイ）**：仮想マシン・イメージの利用と比べ、コンテナ・イメージの作成は、簡単さと効率性が向上する。
+* **継続的な開発、インテグレーション、配置（デプロイ）**：信頼性をもたらし、頻繁なコンテナ・イメージの構築・配置を素早く行え、ロールバック（巻き戻し）が簡単（イメージが不変のため）。
+* **開発担当（Dev）と運用担当（Ops）の懸念事項を分離**：アプリケーション・コンテナ・イメージを配置（デプロイ）する時間より、構築/リリース時間のほうが増えるため、結果としてアプリケーションを基盤（インフラ）から切り離せるようにする。
+* **観測可能性（Observability：オブサーバビリティ）**：OS 面で出てくる情報と測定値（metric：メトリック）だけでなく、アプリケーションの正常性（health）や他の指標。
+* **開発、テスト、本番にわたる一貫した環境**：ノート PC 上で実行するものと、クラウド上で実行するものが同じ。
+* **アプリケーション中心の管理**：アプリケーションは OS の論理的な資源（リソース）を使用するため、仮想ハードウェア上での OS 実行よりも抽象化の度合いが高まる。
+* **疎結合（loosely coupled）、分散、弾力性、解放された[マイクロサービス](https://martinfowler.com/articles/microservices.html)**：個々の部品に小さく分割されたアプリケーションを配置（デプロイ）かつ動的に管理できるようにする。これは一枚岩の層（monolistic stack）を大きな単一目的のマシン上で実行するのとは異なる。
+* **資源の分離**：アプリケーション性能を予測可能にする。
+* **資源の活用**：高効率と高密度。
 
+<!--
 ## What does Kubernetes mean? K8s?
+-->
+## Kubernetes の意味は何ですか？ K8s？
 
+<!--
 The name **Kubernetes** originates from Greek, meaning *helmsman* or
 *pilot*, and is the root of *governor* and
 [cybernetic](http://www.etymonline.com/index.php?term=cybernetics). *K8s*
 is an abbreviation derived by replacing the 8 letters "ubernete" with
 "8".
+-->
+**Kubernetes** の名前はギリシャ語に由来しており、意味は *操舵手（helmsman）* や *水先案内人（pilot）* です。そして、これは *governor* と [cybernetic](http://www.etymonline.com/index.php?term=cybernetics) の語源でもあります。  *"K8s"* は "ubernete" を "8" で省略している所からきています。
+
+
 
 {{% /capture %}}
 
 {{% capture whatsnext %}}
-*   Ready to [Get Started](/docs/setup/)?
-*   For more details, see the [Kubernetes Documentation](/docs/home/).
+*   [導入](/jp/docs/setup/)の準備は整いましたか？
+*   詳細については、[Kubernetes ドキュメント](/jp/docs/home/)をご覧ください。
 {{% /capture %}}
 
 
