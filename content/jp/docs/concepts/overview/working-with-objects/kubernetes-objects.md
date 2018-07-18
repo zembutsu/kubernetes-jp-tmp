@@ -54,50 +54,83 @@ Every Kubernetes object includes two nested object fields that govern the object
 <!--
 For example, a Kubernetes Deployment is an object that can represent an application running on your cluster. When you create the Deployment, you might set the Deployment spec to specify that you want three replicas of the application to be running. The Kubernetes system reads the Deployment spec and starts three instances of your desired application--updating the status to match your spec. If any of those instances should fail (a status change), the Kubernetes system responds to the difference between spec and status by making a correction--in this case, starting a replacement instance.
 -->
-たとえば、Kubernetes
+たとえば、Kubernetes Deployment （デプロイメント：配置）とは、クラスタ上で実行するアプリケーションを表すオブジェクトです。Deployment（デプロイメント）の作成時には、Deploymet spec（配置仕様）を設定し、アプリケーションを稼働するのに３つの複製（レプリカ）が必要であると指定をするでしょう。Kubernetes システムはこの Deplloyment spec を読み込み、任意アプリケーションの３つのインスタンス（実体）を起動します。そして、状態が指定した spec （仕様）と一致するように更新し続けるのです。もしもインスタンスのいずれかに障害が起これば（状態が変われば）、Kubernetes システムは仕様と状態の違いに対応し、正しい状態を保つ役割があります。今回の障害が発生した例であれば、別のインスタンスを起動します。
 
 <!--
 For more information on the object spec, status, and metadata, see the [Kubernetes API Conventions](https://git.k8s.io/community/contributors/devel/api-conventions.md).
 -->
+オブジェクト仕様（object spec）、状態（status）、メタデータ（metadata）に関する詳しい情報は [Kubernetes API 仕様](https://git.k8s.io/community/contributors/devel/api-conventions.md)をご覧ください。
 
+<!--
 ### Describing a Kubernetes Object
+-->
+### Kubernetes オブジェクトの記述 {#describing-a-kubernetes-object}
 
+<!--
 When you create an object in Kubernetes, you must provide the object spec that describes its desired state, as well as some basic information about the object (such as a name). When you use the Kubernetes API to create the object (either directly or via `kubectl`), that API request must include that information as JSON in the request body. **Most often, you provide the information to `kubectl` in a .yaml file.** `kubectl` converts the information to JSON when making the API request.
+-->
+Kubernetes でオブジェクトの作成時、オブジェクト仕様（spec）の指定が必要です。これは期待状態の記述だけでなく、オブジェクトに関する基本的な情報（名前など）も記述します。Kubernetes API を使ってオブジェクトを作成すると（直接、あるいは `kuvectl` を経由するかのどちらか）、API リクエストにはリクエスト・ボディに情報を JSON として含める必要があります。 **ほとんどの場合、 .yaml ファイルに書かれた情報を `kubectl` で送ります。**  `kubectl` は API リクエストの作成時、情報を変換します。
 
+<!--
 Here's an example `.yaml` file that shows the required fields and object spec for a Kubernetes Deployment:
+-->
+こちらは `.yaml` ファイル例です。リクエスト・フィールドと Kubernetes Deployment に対するオブジェクト仕様が見えます：
 
 {{< code file="nginx-deployment.yaml" >}}
 
+<!--
 One way to create a Deployment using a `.yaml` file like the one above is to use the [`kubectl create`](/docs/reference/generated/kubectl/kubectl-commands#create) command in the `kubectl` command-line interface, passing the `.yaml` file as an argument. Here's an example:
+-->
+Deployment の作成に前述の `.yaml` ファイルを作成する１つの方法に、 `kubectl` コマンドライン・インターフェースで [`kubectl create`](/jp/docs/reference/generated/kubectl/kubectl-commands#create) コマンドを使い、 `.yaml` ファイルを引数として渡します。以下は例です：
 
 ```shell
 $ kubectl create -f https://k8s.io/docs/concepts/overview/working-with-objects/nginx-deployment.yaml --record
 ```
 
+<!--
 The output is similar to this:
+-->
+この出力は次のようになります：
 
 ```shell
 deployment "nginx-deployment" created
 ```
 
+<!--
 ### Required Fields
+-->
+### 必要なフィールド {#required-fields}
 
+<!--
 In the `.yaml` file for the Kubernetes object you want to create, you'll need to set values for the following fields:
+-->
+Kubernetes オブジェクトを作成するための `.yaml` ファイルでは、以下フィールドの値に対する指定が必要です：
 
+<!--
 * `apiVersion` - Which version of the Kubernetes API you're using to create this object
 * `kind` - What kind of object you want to create
 * `metadata` - Data that helps uniquely identify the object, including a `name` string, UID, and optional `namespace`
+-->
+* `apiVersion` - このオブジェクトを作成するために、どのバージョンの Kubernetes API を使うか
+* `kind` - 作成したいオブジェクトの種類は何か
+* `metadata` - オブジェクトを一意に（ユニークに）識別するために役立つデータであり、 `name` 文字列、UID、オプションで `namespace` を含む
 
+<!--
 You'll also need to provide the object `spec` field. The precise format of the object `spec` is different for every Kubernetes object, and contains nested fields specific to that object. The [Kubernetes API Reference](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/) can help you find the spec format for all of the objects you can create using Kubernetes.
 For example, the `spec` format for a `Pod` object can be found
 [here](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/#podspec-v1-core),
 and the `spec` format for a `Deployment` object can be found
 [here](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/#deploymentspec-v1-apps).
+-->
+また、オブジェクトの `spec` フィールドも指定する必要があります。オブジェクト 'spec' の厳密な書式は各 Kubernetes オブジェクトとは異なり、そのオブジェクトの仕様をネスト化したフィールドも含みます。に KUbernetes を作って作成可能なすべてのオブジェクトに対する spec 書式（フォーマット）を探すには、 [Kubernetes API リファレンス](/jp/docs/reference/generated/kubernetes-api/{{< param "version" >}}/) が役立つでしょう。たとえば、`Pod` オブジェクトに対する  `spec` 書式は [こちら](/jp/docs/reference/generated/kubernetes-api/{{< param "version" >}}/#podspec-v1-core) にあります。また、 `Deployment` オブジェクトに対する `spec` 書式は[こちら](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/#deploymentspec-v1-apps)にあります。
 
 {{% /capture %}}
 
 {{% capture whatsnext %}}
+<!--
 * Learn about the most important basic Kubernetes objects, such as [Pod](/docs/concepts/workloads/pods/pod-overview/).
+-->
+* [Pod](/jp/docs/concepts/workloads/pods/pod-overview/) のような、最も重要な基本 Kubernetes オブジェクトについて学びましょう。
 {{% /capture %}}
 
 
