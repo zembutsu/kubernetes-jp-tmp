@@ -1,5 +1,5 @@
 ---
-title: "Object Management Using kubectl"
+title: "kubectl によるオブジェクトの管理"
 weight: 50
 ---
 

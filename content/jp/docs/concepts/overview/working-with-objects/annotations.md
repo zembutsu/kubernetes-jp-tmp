@@ -1,16 +1,23 @@
 ---
-title: Annotations
+title: アノテーション
 content_template: templates/concept
 weight: 50
 ---
 
 {{% capture overview %}}
+<!--
 You can use Kubernetes annotations to attach arbitrary non-identifying metadata
 to objects. Clients such as tools and libraries can retrieve this metadata.
+-->
+Kubernetes アノテーション（annocation：注釈）を使えば、オブジェクトに対して識別用途以外のメタデータを貼り付けられます。ツールやライブラリのようなクライアントがこのメタデータを参照できます。
+
 {{% /capture %}}
 
 {{% capture body %}}
+<!--
 ## Attaching metadata to objects
+-->
+## メタデータをオブジェクトにアタッチ {#attaching-metadata-to-object}
 
 You can use either labels or annotations to attach metadata to Kubernetes
 objects. Labels can be used to select objects and to find
@@ -61,7 +68,10 @@ and the like.
 {{% /capture %}}
 
 {{% capture whatsnext %}}
+<!--
 Learn more about [Labels and Selectors](/docs/concepts/overview/working-with-objects/labels/).
+-->
+[ラベルとセレクタ](/docs/concepts/overview/working-with-objects/labels/)について学びましょう。
 {{% /capture %}}
 
 
