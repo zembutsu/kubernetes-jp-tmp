@@ -3,15 +3,18 @@ reviewers:
 - derekwaynecarr
 - mikedanese
 - thockin
-title: Namespaces
+title: 名前空間
 content_template: templates/concept
 weight: 30
 ---
 
 {{% capture overview %}}
 
+<!--
 Kubernetes supports multiple virtual clusters backed by the same physical cluster.
 These virtual clusters are called namespaces.
+-->
+Kubernetes は同じ物理クラスタ上で複数の仮想クラスタをサポートします。これらの仮想クラスタを名前空間（namespace）と呼びます。
 
 {{% /capture %}}
 
