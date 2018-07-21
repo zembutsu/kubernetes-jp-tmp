@@ -1,5 +1,5 @@
 ---
-title: Tutorials
+title: チュートリアル
 main_menu: true
 weight: 60
 ---

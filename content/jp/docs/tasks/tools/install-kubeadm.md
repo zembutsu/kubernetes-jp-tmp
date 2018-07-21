@@ -1,14 +1,17 @@
 ---
-title: Installing kubeadm
+title: kubeadm のインストール
 content_template: templates/task
 weight: 30
 ---
 
 {{% capture overview %}}
 
+<!--
 <img src="https://raw.githubusercontent.com/cncf/artwork/master/kubernetes/certified-kubernetes/versionless/color/certified-kubernetes-color.png" align="right" width="150px">This page shows how to install the `kubeadm` toolbox.
 For information how to create a cluster with kubeadm once you have performed this installation process,
 see the [Using kubeadm to Create a Cluster](/docs/setup/independent/create-cluster-kubeadm/) page.
+-->
+<img src="https://raw.githubusercontent.com/cncf/artwork/master/kubernetes/certified-kubernetes/versionless/color/certified-kubernetes-color.png" align="right" width="150px">このページは `kubeadm` ツールボックスのインストール方法を案内します。このインストール手順を終えたあと、kubeadm でクラスタを作成するための情報は [kubeadm を使ってクラスタを作成](/jp/docs/setup/independent/create-cluster-kubeadm/) をご覧ください。
 
 {{% /capture %}}
 

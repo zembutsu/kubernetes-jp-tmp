@@ -1,5 +1,5 @@
 ---
-title: "kubectl によるオブジェクトの管理"
+title: "kubectl 縺ｫ繧医ｋ繧ｪ繝悶ず繧ｧ繧ｯ繝医�ｮ邂｡逅�"
 weight: 50
 ---
 
