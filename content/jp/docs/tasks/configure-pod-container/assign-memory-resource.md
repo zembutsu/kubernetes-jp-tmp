@@ -1,14 +1,16 @@
 ---
-title: Assign Memory Resources to Containers and Pods
+title: コンテナとポッドにメモリ・リソースを割り当て
 content_template: templates/task
 weight: 10
 ---
 
 {{% capture overview %}}
-
+<!--
 This page shows how to assign a memory *request* and a memory *limit* to a
 Container. A Container is guaranteed to have as much memory as it requests,
 but is not allowed to use more memory than its limit.
+-->
+このページはコンテナに対してメモリ要求（ *request* ）とメモリ上限（ *limit* ）を割り当てる方法を説明します。コンテナは要求があったメモリ保持を保証します。しかし、上限を超えるメモリ使用を許可しません。
 
 {{% /capture %}}
 
