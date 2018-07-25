@@ -4,14 +4,20 @@ main_menu: true
 weight: 60
 ---
 
+<!--
 This section of the Kubernetes documentation contains tutorials.
 A tutorial shows how to accomplish a goal that is larger than a single
 [task](/docs/tasks/). Typically a tutorial has several sections,
 each of which has a sequence of steps.
 Before walking through each tutorial, you may want to bookmark the
 [Standardized Glossary](/docs/reference/glossary/) page for later references.
+-->
+Kubernetes ドキュメントの本セクションはチュートリアルです。チュートリアルでは１つの [タスク](/jp/docs/tasks/) よりも大きな課題（ゴール）をどのようにして達成するか紹介します。通常、チュートリアルには複数のセクションがあり、それぞれ一連の手順があります。各チュートリアルに進む前に、[基本用語集](/jp/docs/reference/glossary/) のページを後で参照するためブックマーク（お気に入り）に追加しておくと良いでしょう。
 
+<!--
 ## Basics
+-->
+## 基本 {#basics}
 
 * [Kubernetes Basics](/docs/tutorials/kubernetes-basics/) is an in-depth interactive tutorial that helps you understand the Kubernetes system and try out some basic Kubernetes features.
 

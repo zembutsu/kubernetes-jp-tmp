@@ -1,12 +1,5 @@
-<!--
-You need to have a Kubernetes cluster, and the kubectl command-line tool must
-be configured to communicate with your cluster. If you do not already have a
-cluster, you can create one by using
-[Minikube](/docs/getting-started-guides/minikube),
-or you can use one of these Kubernetes playgrounds:
--->
-Kubernetes ƒNƒ‰ƒXƒ^‚Ì€”õ‚ª•K—v‚Å‚·B‚»‚µ‚ÄAkubectl ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“Eƒc[ƒ‹‚ªƒNƒ‰ƒXƒ^‚Æ’ÊM‚Å‚«‚é‚æ‚¤‚Éİ’è‚³‚ê‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·BƒNƒ‰ƒXƒ^‚ğ‚Á‚Ä‚¢‚È‚¢ê‡‚Í [Minikube](/jp/docs/getting-started-guides/minikube) ‚Å
 
+Kubernetes ã‚¯ãƒ©ã‚¹ã‚¿ã®æº–å‚™ãŒå¿…è¦ã§ã™ã€‚ãã—ã¦ã€kubectl ã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³ãƒ»ãƒ„ãƒ¼ãƒ«ãŒã‚¯ãƒ©ã‚¹ã‚¿ã¨é€šä¿¡ã§ãã‚‹ã‚ˆã†ã«è¨­å®šã•ã‚Œã¦ã„ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚ã‚¯ãƒ©ã‚¹ã‚¿ã‚’æŒã£ã¦ã„ãªã„å ´åˆã¯ [Minikube](/jp/docs/setup/minikube) ã‚’ä½¿ã†ã‹ã€ä»¥ä¸‹ã®ãƒ—ãƒ¬ã‚¤ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ï¼ˆéŠã³å ´ï¼‰ã‚’ã”åˆ©ç”¨ãã ã•ã„ï¼š
 
 * [Katacoda](https://www.katacoda.com/courses/kubernetes/playground)
 * [Play with Kubernetes](http://labs.play-with-k8s.com/)
