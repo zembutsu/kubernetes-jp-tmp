@@ -1,5 +1,5 @@
 ---
-title: Overview
+title: 概要
 weight: 5
 ---
 
@@ -9,7 +9,7 @@ weight: 5
 
 <body>
 
-<link href="./public/css/styles.css" rel="stylesheet">
+<link href="/docs/tutorials/kubernetes-basics/public/css/styles.css" rel="stylesheet">
 
 <div class="layout" id="top">
 
@@ -17,16 +17,23 @@ weight: 5
 
     <div class="row">
       <div class="col-md-9">
-        <h2>Kubernetes Basics</h2>
-        <p>This tutorial provides a walkthrough of the basics of the Kubernetes cluster orchestration system. Each module contains some background information on major Kubernetes features and concepts, and includes an interactive online tutorial. These interactive tutorials let you manage a simple cluster and its <a href="/docs/concepts/overview/what-is-kubernetes/#why-containers">containerized applications</a> for yourself.</p>
-        <p>Using the interactive tutorials, you can learn to:</p>
+        <h2>Kubernetes 基礎</h2>
+        <p>
+        <!--
+        This tutorial provides a walkthrough of the basics of the Kubernetes cluster orchestration system. Each module contains some background information on major Kubernetes features and concepts, and includes an interactive online tutorial. These interactive tutorials let you manage a simple cluster and its <a href="/docs/concepts/overview/what-is-kubernetes/#why-containers">containerized applications</a> for yourself.
+        -->
+        このチュートリアルは Kubernetes クラスタ・オーケストレーション・システムの基本を一通りこなします。各要素には主な Kubernetes 機能と概要に関する背景情報や、双方向のオンライン・チュートリアルを含みます。双方向チュートリアルでは、１つのクラスタを管理し、自分自身で <a href="/jp/docs/concepts/overview/what-is-kubernetes/#why-containers">コンテナ化したアプリケーション</a> を管理します。
+        </p>
+        <p><!--Using the interactive tutorials, you can learn to:-->双方向チュートリアルで学べるのは：</p>
         <ul>
-        <li>Deploy a containerized application on a cluster</li>
-        <li>Scale the deployment</li>
-        <li>Update the containerized application with a new software version</li>
-        <li>Debug the containerized application</li>
+        <li><!--Deploy a containerized application on a cluster-->コンテナ化したアプリケーションをクラスタに展開（デプロイ）</li>
+        <li><!--Scale the deployment-->デプロイメントのスケール</li>
+        <li><!--Update the containerized application with a new software version-->コンテナ化したアプリケーションを新しいソフトウェアのバージョンに更新</li>
+        <li><!--Debug the containerized application-->コンテナ化したアプリケーションのデバッグ</li>
         </ul>
-        <p>The tutorials use Katacoda to run a virtual terminal in your web browser that runs Minikube, a small-scale local deployment of Kubernetes that can run anywhere. There's no need to install any software or configure anything; each interactive tutorial runs directly out of your web browser itself.</p>
+        <p><!--The tutorials use Katacoda to run a virtual terminal in your web browser that runs Minikube, a small-scale local deployment of Kubernetes that can run anywhere. There's no need to install any software or configure anything; each interactive tutorial runs directly out of your web browser itself.-->
+                チュートリアルでは Katacoda を使ってウェブブラウザ上に仮想ターミナルを実行します。これは Minikube を実行するものであり、Kubernetes の小規模ローカル環境としてどこでも実行できるものです。使うにはソフトウェアのインストールや設定が不要ですので、それぞれの双方向チュートリアルでは自分のブラウザ以外に使うものはありません。
+        </p>
       </div>
     </div>
 
@@ -34,37 +41,41 @@ weight: 5
 
     <div class="row">
       <div class="col-md-9">
-        <h2>What can Kubernetes do for you?</h2>
-        <p>With modern web services, users expect applications to be available 24/7, and developers expect to deploy new versions of those applications several times a day. Containerization helps package software to serve these goals, enabling applications to be released and updated in an easy and fast way without downtime. Kubernetes helps you make sure those containerized applications run where and when you want, and helps them find the resources and tools they need to work. <a href="/docs/concepts/overview/what-is-kubernetes/">Kubernetes</a> is a production-ready, open source platform designed with Google's accumulated experience in container orchestration, combined with best-of-breed ideas from the community.</p>
+        <h2><!--What can Kubernetes do for you?-->Kubernetes は何ができるのでしょうか？</h2>
+        <p><!--
+        With modern web services, users expect applications to be available 24/7, and developers expect to deploy new versions of those applications several times a day. Containerization helps package software to serve these goals, enabling applications to be released and updated in an easy and fast way without downtime. Kubernetes helps you make sure those containerized applications run where and when you want, and helps them find the resources and tools they need to work. <a href="/docs/concepts/overview/what-is-kubernetes/">Kubernetes</a> is a production-ready, open source platform designed with Google's accumulated experience in container orchestration, combined with best-of-breed ideas from the community.
+        -->
+        最近のウェブサービスでは、利用者がアプリケーションを毎日24時間利用できるのを期待しています。そして、開発者はこのアプリケーションの新しいバージョンを１日に何度も展開したいでしょう。停止時間（ダウンタイム）なく簡単かつ素早いアプリケーションのリリースと更新を行えるよう、コンテナ化はソフトウェアのパッケージ化は、これらの目標を達成するために役立ちます。Kubernetes はどこでも必要な時にこれらコンテナ化したアプリケーションを確実に動かすために役立つものであり、これら処理に必要なリソースとツールを見つけるためにも役立つでしょう。<a href="/jp/docs/concepts/overview/what-is-kubernetes/">Kubernetes</a> は本番に対応しているオープンソースのプラットフォームであり、設計に基づいているのは、Google が蓄積したコンテナ・オーケストレーションの経験と、コミュニティによる最善の組み合わせのアイディアを連携です。
+        </p>
       </div>
     </div>
 
     <div id="basics-modules" class="content__modules">
-      <h2>Kubernetes Basics Modules</h2>
+      <h2><!--Kubernetes Basics Modules-->Kubernetes の基本要素</h2>
       <div class="row">
         <div class="col-md-12">
           <div class="row">
             <div class="col-md-4">
               <div class="thumbnail">
-                <a href="/docs/tutorials/kubernetes-basics/cluster-intro/"><img src="./public/images/module_01.svg?v=1469803628347" alt=""></a>
+                <a href="/jp/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/"><img src="/docs/tutorials/kubernetes-basics/public/images/module_01.svg?v=1469803628347" alt=""></a>
                 <div class="caption">
-                  <a href="cluster-intro/"><h5>1. Create a Kubernetes cluster</h5></a>
+                  <a href="/jp/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/"><h5>1. <!--Create a Kubernetes cluster-->Kubernetes クラスタの作成</h5></a>
                 </div>
               </div>
             </div>
             <div class="col-md-4">
               <div class="thumbnail">
-                <a href="/docs/tutorials/kubernetes-basics/deploy-intro/"><img src="./public/images/module_02.svg?v=1469803628347" alt=""></a>
+                <a href="/jp/docs/tutorials/kubernetes-basics/deploy-app/deploy-intro/"><img src="/docs/tutorials/kubernetes-basics/public/images/module_02.svg?v=1469803628347" alt=""></a>
                 <div class="caption">
-                  <a href="deploy-intro/"><h5>2. Deploy an app</h5></a>
+                  <a href="/jp/docs/tutorials/kubernetes-basics/deploy-app/deploy-intro/"><h5>2. <!--Deploy an app-->アプリケーションの展開（デプロイ）</h5></a>
                 </div>
               </div>
             </div>
             <div class="col-md-4">
               <div class="thumbnail">
-                <a href="/docs/tutorials/kubernetes-basics/explore-intro/"><img src="./public/images/module_03.svg?v=1469803628347" alt=""></a>
+                <a href="/jp/docs/tutorials/kubernetes-basics/explore/explore-intro/"><img src="/docs/tutorials/kubernetes-basics/public/images/module_03.svg?v=1469803628347" alt=""></a>
                 <div class="caption">
-                  <a href="explore-intro/"><h5>3. Explore your app</h5></a>
+                  <a href="/jp/docs/tutorials/kubernetes-basics/explore/explore-intro/"><h5>3. <!--Explore your app--->アプリケーションの探索</h5></a>
                 </div>
               </div>
             </div>
@@ -74,25 +85,25 @@ weight: 5
           <div class="row">
             <div class="col-md-4">
               <div class="thumbnail">
-                <a href="/docs/tutorials/kubernetes-basics/expose-intro/"><img src="./public/images/module_04.svg?v=1469803628347" alt=""></a>
+                <a href="/jp/docs/tutorials/kubernetes-basics/expose/expose-intro/"><img src="/docs/tutorials/kubernetes-basics/public/images/module_04.svg?v=1469803628347" alt=""></a>
                 <div class="caption">
-                  <a href="expose-intro/"><h5>4. Expose your app publicly</h5></a>
+                  <a href="/jp/docs/tutorials/kubernetes-basics/expose/expose-intro/"><h5>4. <!--Expose your app publicly-->アプリケーションを公の場に公開</h5></a>
                 </div>
               </div>
             </div>
             <div class="col-md-4">
               <div class="thumbnail">
-                <a href="/docs/tutorials/kubernetes-basics/scale-intro/"><img src="./public/images/module_05.svg?v=1469803628347" alt=""></a>
+                <a href="/jp/docs/tutorials/kubernetes-basics/scale/scale-intro/"><img src="/docs/tutorials/kubernetes-basics/public/images/module_05.svg?v=1469803628347" alt=""></a>
                 <div class="caption">
-                  <a href="scale-intro/"><h5>5. Scale up your app</h5></a>
+                  <a href="/jp/docs/tutorials/kubernetes-basics/scale/scale-intro/"><h5>5. <!--Scale up your app-->アプリケーションのスケールアップ</h5></a>
                 </div>
               </div>
             </div>
             <div class="col-md-4">
               <div class="thumbnail">
-                <a href="/docs/tutorials/kubernetes-basics/update-intro/"><img src="./public/images/module_06.svg?v=1469803628347" alt=""></a>
+                <a href="/jp/docs/tutorials/kubernetes-basics/update/update-intro/"><img src="/docs/tutorials/kubernetes-basics/public/images/module_06.svg?v=1469803628347" alt=""></a>
                 <div class="caption">
-                  <a href="update-intro/"><h5>6. Update your app</h5></a>
+                  <a href="/jp/docs/tutorials/kubernetes-basics/update/update-intro/"><h5>6. <!--Update your app-->アプリケーションの更新</h5></a>
                 </div>
               </div>
             </div>
@@ -103,7 +114,7 @@ weight: 5
 
     <div class="row">
       <div class="col-md-12">
-        <a class="btn btn-lg btn-success" href="/docs/tutorials/kubernetes-basics/cluster-intro/" role="button">Start the tutorial<span class="btn__next">›</span></a>
+        <a class="btn btn-lg btn-success" href="/jp/docs/tutorials/kubernetes-basics/cluster-intro/" role="button"><!--Start the tutorial-->チュートリアルを始める<span class="btn__next">›</span></a>
       </div>
     </div>
 

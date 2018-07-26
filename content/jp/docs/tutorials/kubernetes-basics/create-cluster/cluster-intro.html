@@ -1,5 +1,5 @@
 ---
-title: Using Minikube to Create a Cluster
+title: Minikube を使ってクラスタを作成
 weight: 10
 ---
 
@@ -11,6 +11,7 @@ weight: 10
 
 <link href="/docs/tutorials/kubernetes-basics/public/css/styles.css" rel="stylesheet">
 
+
 <div class="layout" id="top">
 
     <main class="content">
@@ -18,38 +19,44 @@ weight: 10
         <div class="row">
 
       <div class="col-md-8">
-          <h3>Objectives</h3>
+          <h3><!--Objectives-->目標</h3>
                 <ul>
-                    <li>Learn what a Kubernetes cluster is.</li>
-                    <li>Learn what Minikube is.</li>
-                    <li>Start a Kubernetes cluster using an online terminal.</li>
+                    <li><!--Learn what a Kubernetes cluster is.-->Kubernetes クラスタとは何かを学ぶ。</li>
+                    <li><!--Learn what Minikube is.-->Minikube とは何かを学ぶ。</li>
+                    <li><!--Start a Kubernetes cluster using an online terminal.-->オンライン・ターミナルを使って Kubernetes クラスタを始める。</li>
                 </ul>
             </div>
 
             <div class="col-md-8">
-                <h3>Kubernetes Clusters</h3>
-                <p>
-                <b>Kubernetes coordinates a highly available cluster of computers that are connected to work as a single unit.</b> The abstractions in Kubernetes allow you to deploy containerized applications to a cluster without tying them specifically to individual machines. To make use of this new model of deployment, applications need to be packaged in a way that decouples them from individual hosts: they need to be containerized. Containerized applications are more flexible and available than in past deployment models, where applications were installed directly onto specific machines as packages deeply integrated into the host. <b>Kubernetes automates the distribution and scheduling of application containers across a cluster in a more efficient way.</b> Kubernetes is an <a href="https://github.com/kubernetes/kubernetes">open-source</a> platform and is production-ready.
+                <h3><!--Kubernetes Clusters-->Kubernetes クラスタ</h3>
+                <p><!--
+                <b>Kubernetes coordinates a highly available cluster of computers that are connected to work as a single unit.</b> The abstractions in Kubernetes allow you to deploy containerized applications to a cluster without tying them specifically to individual machines. To make use of this new model of deployment, applications need to be packaged in a way that decouples them from individual hosts: they need to be containerized. Containerized applications are more flexible and available than in past deployment models, where applications were installed directly onto specific machines as packages deeply integrated into the host. <b>Kubernetes automates the distribution and scheduling of application containers across a cluster in a more efficient way.</b> Kubernetes is an <a href="https://github.com/kubernetes/kubernetes">open-source</a> platform and is production-ready.-->
+                <b>Kubernetes は高い可用性をがある計算機クラスタを調整（コーディネート）します。クラスタに接続された計算機は、１つの装置（ユニット）として動作します。</b>Kubernetes の抽象化によって、コンテナ化したアプリケーションをクラスタに対して、個々のマシンを指定しなくてもデプロイできるようにします。この新しい手法の展開（デプロイ）を利用するため、アプリケーションを個々のホストから切り離すためのパッケージ化が、ある意味では必要となりました。つまり、アプリケーションのコンテナ化です。コンテナ化したアプリケーションは過去の展開（デプロイ）手法と比べて柔軟（フレキシブル）かつ利用しやすいものです。従来は特定のマシンに直接アプリケーションをインストールする必要があり、パッケージもホストと強く関連付けられたからです。 <b>Kubernetes はクラスタ全体により効率的な手法で、アプリケーション・コンテナの配布とスケジューリングを自動的に行います</b> Kubernetes は <a href="https://github.com/kubernetes/kubernetes">オープンソース</a> のプラットフォームであり、プロダクションに対応しています。
                 </p>
-                <p>A Kubernetes cluster consists of two types of resources:
+                <p><!--A Kubernetes cluster consists of two types of resources:--> Kubernetes クラスタを構成するのは２種類のリソースです：
                     <ul>
+                    <!--
                         <li>The <b>Master</b> coordinates the cluster</li>
                         <li><b>Nodes</b> are the workers that run applications</li>
+                        -->
+                        <li><b>マスタ（Master）</b>はクラスタを調整する</li>
+                        <li><b>ノード（Nodes）</b>はアプリケーションを実行するワーカー（workers）</li>
                     </ul>
                 </p>
             </div>
 
             <div class="col-md-4">
                 <div class="content__box content__box_lined">
-                    <h3>Summary:</h3>
+                    <h3><!--Summary:-->要約：</h3>
                     <ul>
-                        <li>Kubernetes cluster</li>
+                        <li><!--Kubernetes cluster-->Kubernetes クラスタ</li>
                         <li>Minikube</li>
                     </ul>
                 </div>
                 <div class="content__box content__box_fill">
                     <p><i>
-                        Kubernetes is a production-grade, open-source platform that orchestrates the placement (scheduling) and execution of application containers within and across computer clusters.
+                        <!--Kubernetes is a production-grade, open-source platform that orchestrates the placement (scheduling) and execution of application containers within and across computer clusters.-->
+                        Kubernetes は本番レベルのオープンソースのプラットフォームであり、計算機クラスタの内部を横断して、アプリケーション・コンテナの配置（スケジューリング）と実行をオーケストレートします。
                     </i></p>
                 </div>
             </div>
@@ -58,7 +65,7 @@ weight: 10
 
         <div class="row">
             <div class="col-md-8">
-                <h2 style="color: #3771e3;">Cluster Diagram</h2>
+                <h2 style="color: #3771e3;"><!--Cluster Diagram-->クラスタの図解</h2>
             </div>
         </div>
 
@@ -71,24 +78,32 @@ weight: 10
 
         <div class="row">
             <div class="col-md-8">
-                <p><b>The Master is responsible for managing the cluster.</b> The master coordinates all activities in your cluster, such as scheduling applications, maintaining applications' desired state, scaling applications, and rolling out new updates.</p>
-                <p><b>A node is a VM or a physical computer that serves as a worker machine in a Kubernetes cluster.</b> Each node has a Kubelet, which is an agent for managing the node and communicating with the Kubernetes master. The node should also have tools for handling container operations, such as <a href="https://www.docker.com/">Docker</a> or <a href="https://coreos.com/rkt/">rkt</a>. A Kubernetes cluster that handles production traffic should have a minimum of three nodes.</p>
+                <p><!--<b>The Master is responsible for managing the cluster.</b> The master coordinates all activities in your cluster, such as scheduling applications, maintaining applications' desired state, scaling applications, and rolling out new updates.-->
+                	<b>マスタはクラスタを管理する責任があります。</b> マスタはクラスタ内の活動すべてを調整します。たとえば、アプリケーションのスケジューリング、アプリケーションの期待状態の維持、アプリケーションの規模変更（スケーリング）、新しい更新の展開（ローリングアウト）です。
+                </p>
+                <p><!--<b>A node is a VM or a physical computer that serves as a worker machine in a Kubernetes cluster.</b> Each node has a Kubelet, which is an agent for managing the node and communicating with the Kubernetes master. The node should also have tools for handling container operations, such as <a href="https://www.docker.com/">Docker</a> or <a href="https://coreos.com/rkt/">rkt</a>. A Kubernetes cluster that handles production traffic should have a minimum of three nodes.-->
+                	<b>ノードは仮想マシンあるいは物理コンピュータであり、Kubernetes クラスタ内ではワーカ・マシンとして動作します。</b> 各ノードには Kubelet があります。これはノードを管理し、Kubernetes マスタと通信するエージェント です。また、ノードは <a href="https://www.docker.com/">Docker</a> や <a href="https://coreos.com/rkt/">rkt</a> のようなコンテナ操作を取り扱うツールも持っています。Kubernetes クラスタで本番のトラフィックを扱うには、少なくとも3台のノードを持つべきです。
+                
+                </p>
 
             </div>
             <div class="col-md-4">
                 <div class="content__box content__box_fill">
-                    <p><i> Masters manage the cluster and the nodes are used to host the running applications.  </i></p>
+                    <p><i> <!--Masters manage the cluster and the nodes are used to host the running applications.  -->マスタはクラスタを管理し、ノードはホスト上で実行するアプリケーションのために使います</i></p>
                 </div>
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-8">
-                <p>When you deploy applications on Kubernetes, you tell the master to start the application containers. The master schedules the containers to run on the cluster's nodes. <b>The nodes communicate with the master using the Kubernetes API</b>, which the master exposes. End users can also use the Kubernetes API directly to interact with the cluster.</p>
+                <p><!--When you deploy applications on Kubernetes, you tell the master to start the application containers. The master schedules the containers to run on the cluster's nodes. <b>The nodes communicate with the master using the Kubernetes API</b>, which the master exposes. End users can also use the Kubernetes API directly to interact with the cluster.-->
+                	Kubernetes 上にアプリケーションをデプロイする時は、マスタに対してアプリケーション・コンテナの開始を伝えます。マスタはクラスタのノード上でコンテナの実行を計画（スケジュール）します。<b>ノードはマスタとの通信に Kubernetes API を使います。</b> これは、マスタが公開しているものです。また、エンドユーザはクラスタと直接やりとりするために Kubernetes API を使えます。
+                </p>
 
-                <p>A Kubernetes cluster can be deployed on either physical or virtual machines. To get started with Kubernetes development, you can use <a href="https://github.com/kubernetes/minikube">Minikube</a>.  Minikube is a lightweight Kubernetes implementation that creates a VM on your local machine and deploys a simple cluster containing only one node. Minikube is available for Linux, macOS, and Windows systems. The Minikube CLI provides basic bootstrapping operations for working with your cluster, including start, stop, status, and delete. For this tutorial, however, you'll use a provided online terminal with Minikube pre-installed.</p>
+                <p><!--A Kubernetes cluster can be deployed on either physical or virtual machines. To get started with Kubernetes development, you can use <a href="https://github.com/kubernetes/minikube">Minikube</a>.  Minikube is a lightweight Kubernetes implementation that creates a VM on your local machine and deploys a simple cluster containing only one node. Minikube is available for Linux, macOS, and Windows systems. The Minikube CLI provides basic bootstrapping operations for working with your cluster, including start, stop, status, and delete. For this tutorial, however, you'll use a provided online terminal with Minikube pre-installed.--></p>
+                	Kubernetes クラスタは物理または仮想マシンのどちらにも展開できます。Kubernetes の展開をはじめるには <a href="https://github.com/kubernetes/minikube">Minikube</a>. を使えます。Minikube は軽量な Kubernetes 実装であり、ローカルマシン上に仮想マシンを作成し、１つのノードしか持たないシンプルなクラスタを展開（デプロイ）します。Minikube は Linux、macOS、Windows システムで利用可能です。Minikube CLI はクラスタを操作するための基本構築動作を提供し、ここには開始、停止、状態表示、削除を含みます。とはいえ、このチュートリアルでは、Minikube がインストール済みのオンライン・ターミナルを使います。
 
-                <p>Now that you know what Kubernetes is, let's go to the online tutorial and start our first cluster!</p>
+                <p><!--Now that you know what Kubernetes is, let's go to the online tutorial and start our first cluster!-->これで Kubernetes が何であるかが分かりました。それではオンライン・チュートリアルに移動して、はじめてのクラスタを起動しましょう！</p>
 
             </div>
         </div>
@@ -96,7 +111,7 @@ weight: 10
 
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-lg btn-success" href="/docs/tutorials/kubernetes-basics/cluster-interactive/" role="button">Start Interactive Tutorial <span class="btn__next">›</span></a>
+                <a class="btn btn-lg btn-success" href="/jp/docs/tutorials/kubernetes-basics/create-cluster/cluster-interactive/" role="button">双方向チュートリアルを開始 <span class="btn__next">›</span></a>
             </div>
         </div>
 

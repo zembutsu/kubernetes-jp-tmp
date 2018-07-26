@@ -1,4 +1,4 @@
 ---
-title: Create a Cluster
+title: クラスタの作成
 weight: 10
 ---
