@@ -185,93 +185,140 @@ kubectl replace -f nginx.yaml
 <!--
 Advantages compared to imperative commands:
 -->
-命令型コマンドと利点を比較：
+命令型コマンドに対する利点を比較：
 
 <!--
 - Object configuration can be stored in a source control system such as Git.
 - Object configuration can integrate with processes such as reviewing changes before push and audit trails.
 - Object configuration provides a template for creating new objects.
 -->
+- GIt のようなソース・コントロール・システムにオブジェクト設定を保管できる。
+- push や audito trails による変更前のレビューなどのような手順とオブジェクト設定を統合できる。
+- オブジェクト設定は新しいオブジェクトを作成するテンプレートになる。
 
 <!--
 Disadvantages compared to imperative commands:
 -->
-命令型コマンドと欠点を比較：
+命令型コマンドに対する欠点を比較：
 
 <!--
 - Object configuration requires basic understanding of the object schema.
 - Object configuration requires the additional step of writing a YAML file.
 -->
+- オブジェクト設定には、オブジェクト構造（スキーマ）の基本的な理解が必要。
+- オブジェクト設定には YAML ファイルを書くための追加手順が必要。
 
 <!--
 Advantages compared to declarative object configuration:
 -->
+宣言型オブジェクト設定に対する利点を比較：
 
 <!--
 - Imperative object configuration behavior is simpler and easier to understand.
 - As of Kubernetes version 1.5, imperative object configuration is more mature.
 -->
+- 命令型オブジェクト設定の挙動は簡単で、理解が簡単。
+- Kubernetes バージョン 1.5 以降から、命令型オブジェクト設定が更に成熟。
 
 <!--
 Disadvantages compared to declarative object configuration:
 -->
+宣言型オブジェクト設定に対する欠点を比較：
 
 <!--
 - Imperative object configuration works best on files, not directories.
 - Updates to live objects must be reflected in configuration files, or they will be lost during the next replacement.
 -->
+ - 命令型設定オブジェクト設定はファイルでの扱いが優れており、ディレクトリではない。
+ - 存在しているオブジェクトの更新にには、設定ファイルに変更の反映が必須であり、書き換え後は消えてしまう。
 
+<!--
 ## Declarative object configuration
+-->
+## 宣言型オブジェクト設定 {#declarative-object-configuration}
 
+<!--
 When using declarative object configuration, a user operates on object
 configuration files stored locally, however the user does not define the
 operations to be taken on the files. Create, update, and delete operations
 are automatically detected per-object by `kubectl`. This enables working on
 directories, where different operations might be needed for different objects.
+-->
+宣言型オブジェクト設定の使用時は、ローカルに保存したオブジェクト設定用のファイルを使ってユーザは操作します。しかしながら、ユーザが操作する場合は、設定用のファイルを定義する必要がありません。作成、更新、削除作業は `kubectl` を使ってオブジェクトごとに自動的に処理されます。様々なオブジェクトに対して別々の操作をする必要があるため、これらはの作業はディレクトリ内で行います。
 
 {{< note >}}
+<!--
 **Note:** Declarative object configuration retains changes made by other
 writers, even if the changes are not merged back to the object configuration file.
 This is possible by using the `patch` API operation to write only
 observed differences, instead of using the `replace`
 API operation to replace the entire object configuration.
+-->
+**メモ：** あるオブジェクト設定ファイルに影響のある設定が他の書き手によって追加されても、宣言型オブジェクト設定では、それが元のファイルに反映（マージ）されなくても、設定変更は保持され続けます。これにより、オブジェクト設定の全体を置き換えるために `replace` API を使うのではなく、影響のある範囲を見えるように設定ファイルに書き出し、  `patch` API 処理をするのも可能です。
 {{< /note >}}
 
+<!--
 ### Examples
+-->
+### 例
 
+<!---
 Process all object configuration files in the `configs` directory, and
 create or patch the live objects:
+-->
+すべてのオブジェクト設定ファイルが `config` ディレクトリに置き、ライブ・オブジェクトを作成または追加（パッチ）します。
 
 ```sh
 kubectl apply -f configs/
 ```
 
+<!--
 Recursively process directories:
+-->
+処理用のディレクトリで繰り返します：
 
 ```sh
 kubectl apply -R -f configs/
 ```
 
+<!--
 ### Trade-offs
+-->
+### トレードオフ（損失評価）
 
+<!--
 Advantages compared to imperative object configuration:
+-->
+命令型オブジェクト設定に対する利点：
 
+<!--
 - Changes made directly to live objects are retained, even if they are not merged back into the configuration files.
 - Declarative object configuration has better support for operating on directories and automatically detecting operation types (create, patch, delete) per-object.
+-->
+- 設定ファイルに対する変更が反映されていなくても、ライブ・オブジェクトに対する変更は維持されます。
+- 宣言型オブジェクト設定は、ディレクトリでの操作に適しており、オブジェクト毎に操作タイプ（作成、パッチ、削除）を自動的に検出します。
 
+<!--
 Disadvantages compared to imperative object configuration:
+-->
+命令型オブジェクト設定に対する欠点：
 
+<!--
 - Declarative object configuration is harder to debug and understand results when they are unexpected.
 - Partial updates using diffs create complex merge and patch operations.
+-->
+- 宣言型オブジェクト設定は予期しない状況でのデバッグや理解が大変。
+- 部分的な更新のために差分作成を使うのは、マージやパッチ操作が複雑。
+
 
 {{% /capture %}}
 
 {{% capture whatsnext %}}
-- [Managing Kubernetes Objects Using Imperative Commands](/docs/concepts/overview/object-management-kubectl/imperative-command/)
-- [Managing Kubernetes Objects Using Object Configuration (Imperative)](/docs/concepts/overview/object-management-kubectl/imperative-config/)
-- [Managing Kubernetes Objects Using Object Configuration (Declarative)](/docs/concepts/overview/object-management-kubectl/declarative-config/)
-- [Kubectl Command Reference](/docs/reference/generated/kubectl/kubectl-commands/)
-- [Kubernetes API Reference](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/)
+- [命令型コマンドを使う Kubernetes オブジェクト管理](/jp/docs/concepts/overview/object-management-kubectl/imperative-command/)
+- [オブジェクト設定を使う (命令型) Kubernetes オブジェクト管理](/jp/docs/concepts/overview/object-management-kubectl/imperative-config/)
+- [オブジェクト設定 を使う(宣言型) Kubernetes オブジェクト管理](/jp/docs/concepts/overview/object-management-kubectl/declarative-config/)
+- [Kubectl コマンド・リファレンス（参考資料）](/jp/docs/reference/generated/kubectl/kubectl-commands/)
+- [Kubernetes API リファレンス（参考資料）](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/)
 
 {{< comment >}}
 {{< /comment >}}

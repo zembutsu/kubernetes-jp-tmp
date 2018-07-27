@@ -95,13 +95,13 @@ Unlike [names and UIDs](/docs/user-guide/identifiers), labels do not provide uni
 <!--
 Via a _label selector_, the client/user can identify a set of objects. The label selector is the core grouping primitive in Kubernetes.
 -->
- _ラベル・セレクタ（label selector）_を経由すると、クライアントやユーザはオブジェクトの集まりを識別できます。ラベル・セレクタは Kubernetes におけるコアなグループ化単位（プリミティブ）です。
+ _ラベル・セレクタ（label selector）_ を経由すると、クライアントやユーザはオブジェクトの集まりを識別できます。ラベル・セレクタは Kubernetes におけるコアなグループ化単位（プリミティブ）です。
 
 <!--
 The API currently supports two types of selectors: _equality-based_ and _set-based_.
 A label selector can be made of multiple _requirements_ which are comma-separated. In the case of multiple requirements, all must be satisfied so the comma separator acts as a logical _AND_ (`&&`) operator.
 -->
-API は現時点で２種類のセレクタをサポートしています。等号を使うもの（ _quality-based_）と、組み合わせを使うもの（ _set-based_）です。ラベル・セレクタはコンマ記号で分割する複数の _必要条件_ で構成されます。複数の必要条件のすべてをコンマ記号で記述しますが、これは論理演算子 _AND_ （`&&`）として扱われます。
+API は現時点で２種類のセレクタをサポートしています。等号を使うもの（ _quality-based_）と、組み合わせを使うもの（ _set-based_ ）です。ラベル・セレクタはコンマ記号で分割する複数の _必要条件_ で構成されます。複数の必要条件のすべてをコンマ記号で記述しますが、これは論理演算子 _AND_ （`&&`）として扱われます。
 
 <!--
 An empty label selector (that is, one with zero requirements) selects every object in the collection.
@@ -172,8 +172,10 @@ spec:
 -->
 ### セットを使う（ _Set-based_ ）要件
 
+<!--
 _Set-based_ label requirements allow filtering keys according to a set of values. Three kinds of operators are supported: `in`,`notin` and `exists` (only the key identifier). For example:
-セットを使う（ _Set-based)）要件により、セットした値に一致するキーでフィルタできます。３種類の演算子 `in` 、 `notin` 、 `exist`（キー識別子のみ）をサポートします。例：
+-->
+セットを使う（ _Set-based_）要件により、セットした値に一致するキーでフィルタできます。３種類の演算子 `in` 、 `notin` 、 `exist`（キー識別子のみ）をサポートします。例：
 
 ```
 environment in (production, qa)
@@ -205,62 +207,111 @@ _Set-based_ requirements can be mixed with _equality-based_ requirements. For ex
 -->
 ### LIST と WATCH フィルタリング
 
+<!--
 LIST and WATCH operations may specify label selectors to filter the sets of objects returned using a query parameter. Both requirements are permitted (presented here as they would appear in a URL query string):
+-->
+ラベル・セレクタで LIST （一覧表示）と WATCH （監視）の処理は、オブジェクト・セットの問い合わせパラメータを使ってフィルタできます。
 
+<!--
   * _equality-based_ requirements: `?labelSelector=environment%3Dproduction,tier%3Dfrontend`
   * _set-based_ requirements: `?labelSelector=environment+in+%28production%2Cqa%29%2Ctier+in+%28frontend%29`
+-->
+  * _equality-based_ 必要条件: `?labelSelector=environment%3Dproduction,tier%3Dfrontend`
+  * _set-based_ 必要条件: `?labelSelector=environment+in+%28production%2Cqa%29%2Ctier+in+%28frontend%29`
 
+<!--
 Both label selector styles can be used to list or watch resources via a REST client. For example, targeting `apiserver` with `kubectl` and using _equality-based_ one may write:
+-->
+ラベル・セレクタ・スタイルの両方を、 REST クライアントを通してリソースの一覧表示または監視のために使えます。例えば、 `kubectl` で `apiserver` を対象にして  _equality-based_ を利用する方法の１つは：
 
 ```shell
 $ kubectl get pods -l environment=production,tier=frontend
 ```
 
+<!--
 or using _set-based_ requirements:
+-->
+あるいは _set-based_ 必要条件を使います:
 
 ```shell
 $ kubectl get pods -l 'environment in (production),tier in (frontend)'
 ```
 
+<!--
 As already mentioned _set-based_ requirements are more expressive.  For instance, they can implement the _OR_ operator on values:
+-->
+既に言及している _set-based_ 必要条件については、記法が多彩です。たとえば、 _OR_ 演算子を値に埋め込むには：
+
 
 ```shell
 $ kubectl get pods -l 'environment in (production, qa)'
 ```
 
+<!--
 or restricting negative matching via _exists_ operator:
+-->
+あるいは _exists_ 演算子で一致しないものに制限するには：
 
 ```shell
 $ kubectl get pods -l 'environment,environment notin (frontend)'
 ```
 
+<!--
 ### Set references in API objects
+-->
+## API オブジェクト設定リファレンス {#set-references-in-api-objects}
 
+<!--
 Some Kubernetes objects, such as [`services`](/docs/user-guide/services) and [`replicationcontrollers`](/docs/user-guide/replication-controller), also use label selectors to specify sets of other resources, such as [pods](/docs/user-guide/pods).
+-->
+[`services`（サービス）](/jp/docs/user-guide/services) と [`replicationcontrollers`（レプリケーション・コントローラ）](/jp/docs/user-guide/replication-controller) といった一部の Kubernetes オブジェクトは、ラベル・セレクタとして [ポッド](/jp/docs/user-guide/pods) のような他のリソース指定も可能です。
 
+<!--
 #### Service and ReplicationController
+--->
+#### サービスとレプリケーション・コントローラ {#service-and-replicationcontroller}
 
+<!--
 The set of pods that a `service` targets is defined with a label selector. Similarly, the population of pods that a `replicationcontroller` should manage is also defined with a label selector.
+-->
+ポッドの集まりとは、ラベル・セレクタで `service` と定義したものが対象です。同様に、ポッドの集まりとはラベル・セレクタで   `replicationcontroller`  として定義したものが管理対象とも言えるでしょう。
 
+<!--
 Labels selectors for both objects are defined in `json` or `yaml` files using maps, and only _equality-based_ requirement selectors are supported:
+-->
+ラベル・セレクタがサポートしているのは、 `json` や `yaml`  ファイルを使って割り当てる（mapする）オブジェクトか、_equality-based_ 必要条件のセレクタのみの両方です。
 
 ```json
 "selector": {
     "component" : "redis",
 }
-```
+``
+<!--
 or
+-->
+または
 
 ```yaml
 selector:
     component: redis
 ```
 
+<!--
 this selector (respectively in `json` or `yaml` format) is equivalent to `component=redis` or `component in (redis)`.
+-->
+このセレクタ（個々の `json` か `yaml` 形式）は `component=redis` や  `component in (redis)` と同等です。
 
+<!--
 #### Resources that support set-based requirements
+-->
+### set-based 必要条件をサポートするリソース {#resources-that-support-set-based-requirements}
 
+<!--
 Newer resources, such as [`Job`](/docs/concepts/jobs/run-to-completion-finite-workloads/), [`Deployment`](/docs/concepts/workloads/controllers/deployment/), [`Replica Set`](/docs/concepts/workloads/controllers/replicaset/), and [`Daemon Set`](/docs/concepts/workloads/controllers/daemonset/), support _set-based_ requirements as well.
+-->
+
+[`Job`（ジョブ）](/jp/docs/concepts/jobs/run-to-completion-finite-workloads/)、 [`Deployment`（デプロイメント）](/jp/docs/concepts/workloads/controllers/deployment/)、 [`Replica Set`（レプリカ・セット）](/jp/docs/concepts/workloads/controllers/replicaset/)、 [`Daemon Set`（デーモン・セット）](/jp/docs/concepts/workloads/controllers/daemonset/) のような新しいリソースは、 _set-based_ 必要条件も同様にサポートします：
+
 
 ```yaml
 selector:
@@ -271,11 +322,20 @@ selector:
     - {key: environment, operator: NotIn, values: [dev]}
 ```
 
+<!--
 `matchLabels` is a map of `{key,value}` pairs. A single `{key,value}` in the `matchLabels` map is equivalent to an element of `matchExpressions`, whose `key` field is "key", the `operator` is "In", and the `values` array contains only "value". `matchExpressions` is a list of pod selector requirements. Valid operators include In, NotIn, Exists, and DoesNotExist. The values set must be non-empty in the case of In and NotIn. All of the requirements, from both `matchLabels` and `matchExpressions` are ANDed together -- they must all be satisfied in order to match.
+-->
+`matchLables` は `{key.value}` の組み合わせを割り当て（マップ）します。 `matchLables` 中の `{key.value}` が割り当てる（マップする）のは、`matchExpressions` 要素の `key` フィールドを「key」として、 `operator` を「In」として、 `values` フィールドをのアレイを「Value」として扱うのと同等です。 `matchExpressions`  はポッド・セレクタが必要とするリストです。有効な演算子には Notin、おExist、DoesNotExist が含まれます。In と notIn の場合は value に空ではない値が必ず入っている必要があります。すべての必要条件に `matchLables` と `matchExpressions` が含まれており、 AND も一緒に使えます。並べた順番で条件を満たす必要があります。
 
+<!--
 #### Selecting sets of nodes
+-->
+#### ノードのセットを選択 {#selecting-sets-of-nodes}
 
+<!--
 One use case for selecting over labels is to constrain the set of nodes onto which a pod can schedule.
 See the documentation on [node selection](/docs/concepts/configuration/assign-pod-node/) for more information.
+-->
+ラベルの使用例としては、どのポッドがスケジュール可能かどうか制限する方法があります。詳細は [ノード選択](/jp/docs/concepts/configuration/assign-pod-node/) をご覧ください。
 
 {{% /capture %}}
