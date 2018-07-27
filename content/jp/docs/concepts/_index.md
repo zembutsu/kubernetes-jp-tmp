@@ -125,7 +125,7 @@ The nodes in a cluster are the machines (VMs, physical servers, etc) that run yo
 #### オブジェクト・メタデータ {#object-medatata}
 
 
-* [注釈](/jp/docs/concepts/overview/working-with-objects/annotations/)
+* [Annotation（アノテーション）](/jp/docs/concepts/overview/working-with-objects/annotations/)
 
 <!--
 ### What's next
