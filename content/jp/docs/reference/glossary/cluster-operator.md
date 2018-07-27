@@ -23,4 +23,4 @@ Their primary responsibility is keeping a cluster up and running, which may invo
 -->
 主にクラスタの正常稼働を維持する責任があり、定期的な保守活動やアップデートが必要になる場合があります。<br />
 
-メモ：クラスタ・オペレータは Kubernetes API を拡張する [Operator パターン](https://coreos.com/operators) をは異なります。
+メモ：クラスタ・オペレータは Kubernetes API を拡張する [Operator パターン](https://coreos.com/operators) とは異なります。
