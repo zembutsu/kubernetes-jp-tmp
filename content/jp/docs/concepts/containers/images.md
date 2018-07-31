@@ -2,16 +2,23 @@
 reviewers:
 - erictune
 - thockin
-title: Images
+title: イメージ
 content_template: templates/concept
 weight: 10
 ---
 
 {{% capture overview %}}
 
+<!--
 You create your Docker image and push it to a registry before referring to it in a Kubernetes pod.
+-->
+Kubernetes ポッドから参照される前に、Docker イメージの作成とレジストリへの送信ができます。
 
+<!--
 The `image` property of a container supports the same syntax as the `docker` command does, including private registries and tags.
+-->
+コンテナの `image` 属性（プロパティ）には `docker` コマンドと同じ構文をサポートしており、プライベート・レジストリやタグに関するコマンドも含みます。
+
 
 {{% /capture %}}
 
@@ -19,26 +26,50 @@ The `image` property of a container supports the same syntax as the `docker` com
 
 {{% capture body %}}
 
+<!--
 ## Updating Images
+-->
+## イメージの更新 {#updating-images}
 
+<!--
 The default pull policy is `IfNotPresent` which causes the Kubelet to skip
 pulling an image if it already exists. If you would like to always force a pull,
 you can do one of the following:
+-->
+デフォルトの取得（pull）ポリシーが `IfNotPresent` （無指定）の場合、既にイメージが存在していれば、Kubelet はイメージの取得を省略します。常に取得を強制したい場合は、いかのいずれかによって行えます：
 
+<!--
 - set the `imagePullPolicy` of the container to `Always`;
 - use `:latest` as the tag for the image to use;
 - enable the [AlwaysPullImages](/docs/admin/admission-controllers/#alwayspullimages) admission controller.
+-->
+- コンテナの  `imagePullPolicy` を `Always` （常時）に指定する
+- 使用するイメージに対して `:latest` （最新）タグを使う
+- [AlwaysPullImages](/jp/docs/admin/admission-controllers/#alwayspullimages) （常にイメージを取得）を許可するコントローラを有効化する。
 
+<!--
 If you did not specify tag of your image, it will be assumed as `:latest`, with
 pull image policy of `Always` correspondingly.
+-->
+もしもイメージのタグを指定しなければ、イメージ取得ポリシーが `Always` であれば、 `:latest` が指定されたものとみなされます。
 
+<!--
 Note that you should avoid using `:latest` tag, see [Best Practices for Configuration](/docs/concepts/configuration/overview/#container-images) for more information.
+-->
+`:latest` タグの使用は避けるべきなのでご注意ください。詳細は [設定情報のベスト・プラクティス](/docs/concepts/configuration/overview/#container-images) をご覧ください。
 
+<!--
 ## Using a Private Registry
+-->
+## プライベート・レジストリを使う {#using-a-private-registry}
 
+<!--
 Private registries may require keys to read images from them.
 Credentials can be provided in several ways:
+-->
+ぷらいべーと・れじすとりいからイメージを読み込むには、鍵（キー）が必要になる場合があります。証明書を取得するには、複数の方法があります：
 
+<!--
   - Using Google Container Registry
     - Per-cluster
     - automatically configured on Google Compute Engine or Google Kubernetes Engine
@@ -56,34 +87,78 @@ Credentials can be provided in several ways:
   - Specifying ImagePullSecrets on a Pod
     - only pods which provide own keys can access the private registry
 Each option is described in more detail below.
+-->
+  - Google Container Registry を使う場合
+    - クラスタごとに
+    - Google Compute Engine または Google Kubernetes Engine で自動的に設定
+    - すべてのポッドがプロジェクトのプライベート・レジストリを読み込める
+  - AWS EC2 Container Registry (ECR) を使う場合
+    - ECR リポジトリに対するアクセス制御に IAM ロールとポリシーを使う
+    - ECR ログイン証明書を自動的にリフレッシュ（再設定）する
+  - Azure Container Registry (ACR) を使う場合
+  - プライベート・レジストリの認証のためにノードを調整する場合
+    - すべてのポッドが設定したプライベート・レジストリから読み込み可能
+    - クラスタ管理者によるノードの設定変更が必要
+  - 事前にイメージを取得する場合
+    - すべてのポッドはノード上にキャッシュされたあらゆるイメージを利用できる
+    - すべてのノードをセットアップするために root 権限が必要
+  - ポッド上で ImagePullSecrets を指定
+    - 自身のキーを持っているポッドのみがプライベート・レジストリにアクセスできる。各オプションの詳細については後述。
 
-
+<!--
 ### Using Google Container Registry
+-->
+### Google Container Registry を使う場合 {#using-google-container-registry}
 
+<!--
 Kubernetes has native support for the [Google Container
 Registry (GCR)](https://cloud.google.com/tools/container-registry/), when running on Google Compute
 Engine (GCE).  If you are running your cluster on GCE or Google Kubernetes Engine, simply
 use the full image name (e.g. gcr.io/my_project/image:tag).
+-->
+Google Compute Engine (GCE) を使う場合、Kubernetes は  [Google Container Registry (GCR)](https://cloud.google.com/tools/container-registry/) をネイティブにサポートします。もしクラスタを GCE や Google Kubernetes Engine 上で実行している場合は、単純に完全なイメージ名を使います（例： gcr.io/my_project/image:tag ）
 
+<!--
 All pods in a cluster will have read access to images in this registry.
+-->
+クラスタ内のすべてのポッドが、このレジストリにあるイメージを読み込めます。
 
+<!--
 The kubelet will authenticate to GCR using the instance's
 Google service account.  The service account on the instance
 will have a `https://www.googleapis.com/auth/devstorage.read_only`,
 so it can pull from the project's GCR, but not push.
+->
 
+Kubelet は GCR との認証にインスタンスの Google サービス・アカウントを使います。インスタンスに対するサービス・アカウントが `https://www.googleapis.com/auth/devstorage.read_only` であれば、プロジェクトの CGR から取得（pull）はできますが、送信（push）できません。
+
+<!--
 ### Using AWS EC2 Container Registry
+-->
+### AWS EC2 Container Registry を使う場合 {#using-aws-ec2-container-registry} 
 
+<!--
 Kubernetes has native support for the [AWS EC2 Container
 Registry](https://aws.amazon.com/ecr/), when nodes are AWS EC2 instances.
+-->
+ノードが AWS EC2 インスタンスの場合は、Kubernetes は [AWS EC2 Container Registry](https://aws.amazon.com/ecr/) をネイティブにサポートします。
 
+<!--
 Simply use the full image name (e.g. `ACCOUNT.dkr.ecr.REGION.amazonaws.com/imagename:tag`)
 in the Pod definition.
+-->
+ポッドの定義を簡単にするにはフル・イメージ名を使います（例： `ACCOUNT.dkr.ecr.REGION.amazonaws.com/imagename:tag`）。
 
+<!--
 All users of the cluster who can create pods will be able to run pods that use any of the
 images in the ECR registry.
+-->
+ECS レジストリ内にあるイメージのすべてを、クラスタ内のユーザであれば誰でもポッドを作成し、ポッドを実行できます。
 
+<!--
 The kubelet will fetch and periodically refresh ECR credentials.  It needs the following permissions to do this:
+-->
+kubelet は ECR 証明書情報を定期的に取得し、再読み込み（リフレッシュ）します。そのためには、以下の権限が必要です：
 
 - `ecr:GetAuthorizationToken`
 - `ecr:BatchCheckLayerAvailability`
@@ -93,22 +168,45 @@ The kubelet will fetch and periodically refresh ECR credentials.  It needs the f
 - `ecr:ListImages`
 - `ecr:BatchGetImage`
 
+<!--
 Requirements:
+-->
+必要条件：
 
+<!--
 - You must be using kubelet version `v1.2.0` or newer.  (e.g. run `/usr/bin/kubelet --version=true`).
 - If your nodes are in region A and your registry is in a different region B, you need version `v1.3.0` or newer.
 - ECR must be offered in your region
+-->
+- kubelet バージョン `v1.2.0` 以上の使用が必要です（例： `/usr/bin/kubelet --version=true` を実行します）。
+- ノードがリージョン A にあり、レジストリが異なるリージョン B にある場合は、バージョン `v1.3.0` 以上が必要です。
 
+
+<!--
 Troubleshooting:
+-->
+トラブルシューティング：
 
+<!--
 - Verify all requirements above.
 - Get $REGION (e.g. `us-west-2`) credentials on your workstation. SSH into the host and run Docker manually with those creds. Does it work?
 - Verify kubelet is running with `--cloud-provider=aws`.
 - Check kubelet logs (e.g. `journalctl -u kubelet`) for log lines like:
   - `plugins.go:56] Registering credential provider: aws-ecr-key`
   - `provider.go:91] Refreshing cache for provider: *aws_credentials.ecrProvider`
+-->
+- 前述の必要条件すべてを確認します。
+- $REGION（例 `us-west-2` など）認証情報を自分の PC に準備します。認証情報を使ってホストに SSH 接続し、 Docker を手動で起動します。正しく動作しますか？
+- kubelet が `--cloud-provider=aws` で動作しているか確認します。
+- kubelet ログ（例： `journalctl -u kubelet` ）から、次のような行を確認します：
+  - `plugins.go:56] Registering credential provider: aws-ecr-key`
+  - `provider.go:91] Refreshing cache for provider: *aws_credentials.ecrProvider`
 
+<!--
 ### Using Azure Container Registry (ACR)
+-->
+### Azure Container Registry (ACR) を使う
+
 When using [Azure Container Registry](https://azure.microsoft.com/en-us/services/container-registry/)
 you can authenticate using either an admin user or a service principal.
 In either case, authentication is done via standard Docker authentication.  These instructions assume the

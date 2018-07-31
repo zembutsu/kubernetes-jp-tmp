@@ -1,5 +1,5 @@
 ---
-title: "Pods"
+title: "ポッド"
 weight: 10
 ---
 
