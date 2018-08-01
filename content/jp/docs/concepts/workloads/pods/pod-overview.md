@@ -117,7 +117,7 @@ A Pod can specify a set of shared storage *volumes*. All containers in the Pod c
 <!--
 You'll rarely create individual Pods directly in Kubernetes--even singleton Pods. This is because Pods are designed as relatively ephemeral, disposable entities. When a Pod gets created (directly by you, or indirectly by a Controller), it is scheduled to run on a Node in your cluster. The Pod remains on that Node until the process is terminated, the pod object is deleted, the pod is *evicted* for lack of resources, or the Node fails.
 -->
-Kubernetes で個々のポッドを直接作成するのは滅多にありません。たとえ１つのポッドだとしてもです。これはポッドが比較的に一過性（ephemeral）で使い捨て可能ものとして設計されているためです。ポッドが作成されると（直接、あるいはコントローラによって間接的に）、クラスタ上のノードでの実行がスケジュールされます。ポッドはノードでプロセスが停止（terminate）されるまで残り続けます。ポッド・オブジェクトが削除されると、ポッドはリソースが欠如により *撤去（evicted）* されます。そうでない場合は、ノードが処理の失敗（fail）となります。
+Kubernetes では個々のポッドを直接作成するのは滅多にありません。たとえ１つのポッドだとしてもです。これはポッドが比較的に一過性（ephemeral）で使い捨て可能ものとして設計されているためです。ポッドが作成されると（直接、あるいはコントローラによって間接的に）、クラスタ上のノードでの実行がスケジュールされます。ポッドはノードでプロセスが停止（terminate）されるまで残り続けます。ポッド・オブジェクトが削除されると、ポッドはリソースが欠如により *撤去（evicted）* されます。そうでない場合は、ノードが処理の失敗（fail）となります。
 
 {{< note >}}
 <!--
@@ -137,23 +137,44 @@ Pods do not, by themselves, self-heal. If a Pod is scheduled to a Node that fail
 -->
 ### ポッドとコントローラ {#pods-and-controllers}
 
+<!--
 A Controller can create and manage multiple Pods for you, handling replication and rollout and providing self-healing capabilities at cluster scope. For example, if a Node fails, the Controller might automatically replace the Pod by scheduling an identical replacement on a different Node.
+-->
+コントローラは複数のポッドの作成と管理ができます。コントローラはクラスタの範囲内において、レプリケーション（複製）とロールアウト（展開）の処理と、自己修復能力を提供します。たとえば、ノードで障害が起これば、コントローラは自動的にポッドを置き換えるため、直ちに別のノード上への配置転換をスケジューリング（計画）します。
 
+<!--
 Some examples of Controllers that contain one or more pods include:
+-->
+以下は１つまたは複数のポッドを含むコントローラの例です：
 
+<!--
 * [Deployment](/docs/concepts/workloads/controllers/deployment/)
 * [StatefulSet](/docs/concepts/workloads/controllers/statefulset/)
 * [DaemonSet](/docs/concepts/workloads/controllers/daemonset/)
+-->
+* [Deployment（デプロイメント）](/jp/docs/concepts/workloads/controllers/deployment/)
+* [StatefulSet（ステートフルセット）](/jp/docs/concepts/workloads/controllers/statefulset/)
+* [DaemonSet（デーモンセット）](/jp/docs/concepts/workloads/controllers/daemonset/)
 
+<!--
 In general, Controllers use a Pod Template that you provide to create the Pods for which it is responsible.
-
+-->
+通常、コントローラはポッド・テンプレートを使い、コントローラが責任を負うポッドを作成します。
+<!--
 ## Pod Templates
+-->
+## ポッド・テンプレート（Pod Templates） {#pod-templates}
 
+<!--
 Pod templates are pod specifications which are included in other objects, such as
 [Replication Controllers](/docs/concepts/workloads/controllers/replicationcontroller/), [Jobs](/docs/concepts/jobs/run-to-completion-finite-workloads/), and
 [DaemonSets](/docs/concepts/workloads/controllers/daemonset/).  Controllers use Pod Templates to make actual pods.
 The sample below is a simple manifest for a Pod which contains a container that prints
 a message.
+-->
+ポッド・テンプレートとはポッドの仕様であり、
+[Replication Controllers（レプリケーション・コントローラ）](/docs/concepts/workloads/controllers/replicationcontroller/)、 [ジョブ](/docs/concepts/jobs/run-to-completion-finite-workloads/)、 [DaemonSets（デーモンセット）](/docs/concepts/workloads/controllers/daemonset/) のような他のオブジェクトを含みます。コントローラは実際のポッドを作成するために、ポッド・テンプレートを使います。以下の例はポッド向けの簡単なマニフェストです。ポッドに含まれるコンテナはメッセージを表示します。
+
 
 ```yaml
 apiVersion: v1
@@ -169,14 +190,23 @@ spec:
     command: ['sh', '-c', 'echo Hello Kubernetes! && sleep 3600']
 ```
 
+<!--
 Rather than specifying the current desired state of all replicas, pod templates are like cookie cutters. Once a cookie has been cut, the cookie has no relationship to the cutter. There is no "quantum entanglement". Subsequent changes to the template or even switching to a new template has no direct effect on the pods already created. Similarly, pods created by a replication controller may subsequently be updated directly. This is in deliberate contrast to pods, which do specify the current desired state of all containers belonging to the pod. This approach radically simplifies system semantics and increases the flexibility of the primitive.
+-->
+全ての複製（レプリカ）に対して期待状態を指定するのに比べれば、ポッド・テンプレートはクッキーの抜き型（cookie cutter）のようなものです。クッキーをカッターを使って切り離したあとは、クッキーとカッターは何の関係も持ちません。ここには「量子もつれ（quantum entanglement）」はありません。テンプレートの変更後や、新しいテンプレートに切り替えた後も、既に作成したポッドに対しては何ら影響を与えません。一方で、レプリケーション・コントローラによって作成されたポッドであれば、その後も直接更新できます。これがポッドと比べて考慮が必要な点です。ポッドでであれば現時点における全コンテナの期待状態を指定するからです。この手法はシステムの形式化（セマンティクス）を極めて簡単にし、初期状態（プリミティブ）の柔軟性も高めます。
 
 {{% /capture %}}
 
 {{% capture whatsnext %}}
+<!--
 * Learn more about Pod behavior:
   * [Pod Termination](/docs/concepts/workloads/pods/pod/#termination-of-pods)
   * Other Pod Topics
+-->
+* ポッドの挙動について学ぶ：
+  * [ポッドの停止](/jp/docs/concepts/workloads/pods/pod/#termination-of-pods)
+  * 他のポッドの話題
+
 {{% /capture %}}
 
 

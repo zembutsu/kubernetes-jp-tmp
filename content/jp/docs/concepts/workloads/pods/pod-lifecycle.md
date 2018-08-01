@@ -1,5 +1,5 @@
 ---
-title: Pod Lifecycle
+title: ポッドのライフサイクル
 content_template: templates/concept
 weight: 30
 ---
