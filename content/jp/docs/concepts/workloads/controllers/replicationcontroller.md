@@ -2,7 +2,7 @@
 reviewers:
 - bprashanth
 - janetkuo
-title: ReplicationController
+title: ReplicationController（レプリケーション・コントローラ）
 content_template: templates/concept
 weight: 20
 ---
@@ -10,20 +10,31 @@ weight: 20
 {{% capture overview %}}
 
 {{< note >}}
+<!--
 **NOTE:** A [`Deployment`](/docs/concepts/workloads/controllers/deployment/) that configures a [`ReplicaSet`](/docs/concepts/workloads/controllers/replicaset/) is now the recommended way to set up replication.
+-->
+**メモ：**  複製（レプリケーション）をセットアップするには、[`Deployment`（デプロイメント）](/jp/docs/concepts/workloads/controllers/deployment/) の使用が [`ReplicaSet`（レプリカ・セット）](/jp/docs/concepts/workloads/controllers/replicaset/) よりも推奨される手法です。
 {{< /note >}}
 
+<!--
 A _ReplicationController_ ensures that a specified number of pod replicas are running at any one
 time. In other words, a ReplicationController makes sure that a pod or a homogeneous set of pods is
 always up and available.
+-->
+_ReplicationController_ （レプリケーション・コントローラ）は指定した数のポッド複製（レプリカ）の常時実行を確実に行います。
+言い換えると、ReplicationController はポッドまたはポッドと同質のものを常に起動かつ利用可能にします。
 
 {{% /capture %}}
 
 
 {{% capture body %}}
 
+<!--
 ## How a ReplicationController Works
+-->
+### ReplicationController の挙動 {#how-a-replicationcontroller-works}
 
+<!--
 If there are too many pods, the ReplicationController terminates the extra pods. If there are too few, the
 ReplicationController starts more pods. Unlike manually created pods, the pods maintained by a
 ReplicationController are automatically replaced if they fail, are deleted, or are terminated.
@@ -32,28 +43,54 @@ For this reason, you should use a ReplicationController even if your application
 only a single pod. A ReplicationController is similar to a process supervisor,
 but instead of supervising individual processes on a single node, the ReplicationController supervises multiple pods
 across multiple nodes.
+-->
+大量のポッドが存在すると、ReplicationController は余分なポッドを終了します。
+あまりにも少なければ、ReplicationController は追加ポッドを起動します。
+手動でポッドを作成するのとは異なり、ポッドの維持は ReplicationController によって行われ、もしも障害があれば自動的に置き換えますし、自動的に削除や終了を処理します。
+たとえば、ノードがカーネルのアップグレードのような破壊的なメンテナスをした後に、ポッドを自動的に再作成します。
+そのため、アプリケーションが必要なのはポッド１つだとしても、ReplicationController を使うべきでしょう。
+ReplicationController はプロセス・スーパーバイザと似ていますが、１つのノード上の個々のプロセスを監視するスーパーバイザとは異なり、ReplicationController は複数のノードを横断する複数のポッドを監視（スーパーバイズ）します。
 
+<!--
 ReplicationController is often abbreviated to "rc" or "rcs" in discussion, and as a shortcut in
 kubectl commands.
+-->
+ReplicationController は議論において頻繁に「rc」や「rcs」と省略されます。また、同様に kubectl コマンドでもショートカットとして使えます。
 
+<!--
 A simple case is to create one ReplicationController object to reliably run one instance of
 a Pod indefinitely.  A more complex use case is to run several identical replicas of a replicated
 service, such as web servers.
+-->
+簡単な利用例は、１つの ReplicationController オブジェクトを作成し、直ちにポッドの中で１つのインスタンスを確実に実行することです。
+より複雑な利用例は、ウェブサーバのようなサービスを複製するために、複数の全く同じ複製（レプリカ）を実行します。
 
+<!--
 ## Running an example ReplicationController
+-->
+## ReplicationController 実行例 {#running-an-example-replicationcontroller}
 
+<!--
 This example ReplicationController config runs three copies of the nginx web server.
+-->
+こちらはnginx ウェブサーバの３つのコピーを ReplicationController で設定する例です。
 
 {{< codenew file="controllers/replication.yaml" >}}
 
+<!--
 Run the example job by downloading the example file and then running this command:
+-->
+サンプルのジョブを実行するには、こちらのコマンドを実行し、サンプルファイルをダウンロードして実行します：
 
 ```shell
 $ kubectl create -f https://k8s.io/examples/controllers/replication.yaml
 replicationcontroller "nginx" created
 ```
 
+<!--
 Check on the status of the ReplicationController using this command:
+-->
+ReplicationController の状態を確認するにはこちらのコマンドを使います：
 
 ```shell
 $ kubectl describe replicationcontrollers/nginx
@@ -81,14 +118,20 @@ Events:
   20s             20s          1        {replication-controller }                    Normal    SuccessfulCreate    Created pod: nginx-4ok8v
 ```
 
+<!--
 Here, three pods are created, but none is running yet, perhaps because the image is being pulled.
 A little later, the same command may show:
+-->
+こちらでは、３つのポッドが作成されましたが、まだ起動中ではありません。おそらく、イメージを取得しているからでしょう。もうしばらく待ってから同じコマンドを実行すると、次のように表示されるでしょう：
 
 ```shell
 Pods Status:    3 Running / 0 Waiting / 0 Succeeded / 0 Failed
 ```
 
+<!--
 To list all the pods that belong to the ReplicationController in a machine readable form, you can use a command like this:
+-->
+マシン上で ReplicationController に所属しちえる全ポッドの一覧を表示するには、次のようなコマンドを使えます：
 
 ```shell
 $ pods=$(kubectl get pods --selector=app=nginx --output=jsonpath={.items..metadata.name})
@@ -96,59 +139,127 @@ echo $pods
 nginx-3ntk0 nginx-4ok8v nginx-qrm3m
 ```
 
+<!--
 Here, the selector is the same as the selector for the ReplicationController (seen in the
 `kubectl describe` output, and in a different form in `replication.yaml`.  The `--output=jsonpath` option
 specifies an expression that just gets the name from each pod in the returned list.
+-->
+ここでは、セレクタは ReplicationController と同じセレクタにしています。 `kubectl describe` の出力で見られますが `repliation.yaml` とは違う形式になっています。 `--output=jsonpath` オプションを指定して、各ポッドごとの名前をリストにして表示できます。
 
-
+<!--
 ## Writing a ReplicationController Spec
+-->
+## ReplicationController Spec を書くには {#writing-a-replicationcontroller-spec}
 
+<!--
 As with all other Kubernetes config, a ReplicationController needs `apiVersion`, `kind`, and `metadata` fields.
 For general information about working with config files, see [object management ](/docs/concepts/overview/object-management-kubectl/overview/).
+-->
+他すべての Kubernetes 設定と同様に、 ReplicationController には `apiVersion` 、 `kind` 、 `metadata` フィールドが必要です。
+設定情報ファイルの役割に関する一般的な情報は、[オブジェクト管理](/jp/docs/concepts/overview/object-management-kubectl/overview/) をご覧ください。
 
+<!--
 A ReplicationController also needs a [`.spec` section](https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status).
+-->
+また、ReplicationController には  [`.spec` セレクション](https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status) が必要です。
 
+<!--
 ### Pod Template
+-->
+### ポッド・テンプレート {#pod-template}
 
+<!--
 The `.spec.template` is the only required field of the `.spec`.
+-->
+`.spec.template` に最低限必要なフィールドは `.spec` です。
 
+<!--
 The `.spec.template` is a [pod template](/docs/concepts/workloads/pods/pod-overview/#pod-templates). It has exactly the same schema as a [pod](/docs/concepts/workloads/pods/pod/), except it is nested and does not have an `apiVersion` or `kind`.
+-->
+`.spec.template` は [ポッド・テンプレート](/jp/docs/concepts/workloads/pods/pod-overview/#pod-templates) です。
+これは [ポッド](/jp/docs/concepts/workloads/pods/pod/) と完全に同じスキーマですが、階層下されておらず、 `apiVersion` や `kind` を持ちません。
 
+<!--
 In addition to required fields for a Pod, a pod template in a ReplicationController must specify appropriate
 labels and an appropriate restart policy. For labels, make sure not to overlap with other controllers. See [pod selector](#pod-selector).
+-->
+ポッドに対して必要なフィールドとしては、ReplicationController のポッドテンプレートでは、適切なラベルと適切な再起動方針（restart policy）の指定が必須です。
+ラベルの場合、他のコントローラと重複しないようにする必要があります。
+[ポッド・セレクタ](#pod-selector) をご覧ください。
 
+<!--
 Only a [`.spec.template.spec.restartPolicy`](/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy) equal to `Always` is allowed, which is the default if not specified.
+-->
+[`.spec.template.spec.restartPolicy`](/jp/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy) のデフォルトが指定されていなければ、常に `Always` が許可されたものとみなします。
 
+<!--
 For local container restarts, ReplicationControllers delegate to an agent on the node,
 for example the [Kubelet](/docs/admin/kubelet/) or Docker.
+-->
+ローカル・コンテナの再起動については、ReplicationControllersあノード上のエージェントに権限を委譲しています。例えば [Kubelet](/jp/doc/admin/kubelet/) や Docker です。
 
+<!--
 ### Labels on the ReplicationController
+-->
+### ReplicationController 上のラベル {#labels-on-the-replicationcontroller}
 
+<!--
 The ReplicationController can itself have labels (`.metadata.labels`).  Typically, you
 would set these the same as the `.spec.template.metadata.labels`; if `.metadata.labels` is not specified
 then it defaults to  `.spec.template.metadata.labels`.  However, they are allowed to be
 different, and the `.metadata.labels` do not affect the behavior of the ReplicationController.
+-->
+ReplicationController は自身のラベル（ `.metadata.labels`）を持てます。
+たいていは、`.spec.template.metadata.labels` と同じものを設定します。
+つまり `.metadata.labels` を指定しなければ、デフォルトで `.spec.template.metadata.labels` となります。
+しかしながら、異なったものを指定できますし、 `.metadata.labels` は ReplicationController の挙動に対して影響を与えません。
 
+<!--
 ### Pod Selector
+-->
+### ポッド・セレクタ {#pod-selector}
 
+<!--
 The `.spec.selector` field is a [label selector](/docs/concepts/overview/working-with-objects/labels/#label-selectors). A ReplicationController
 manages all the pods with labels that match the selector. It does not distinguish
 between pods that it created or deleted and pods that another person or process created or
 deleted. This allows the ReplicationController to be replaced without affecting the running pods.
+-->
+`.spec.selector` フィールドは  [ラベル・セレクタ](/jp/docs/concepts/overview/working-with-objects/labels/#label-selectors) です。
+ReplicationController はセレクタが一致するラベルを持つポッドすべてを管理します。
+これはポッド間の違いについては認識しません。つまり、ポッドが他人またはプロセスによって作成されたか削除されたかは識別しません。
+これにより、ReplicationController は実行中のポッドに影響を与えることなく置き換えが可能です。
 
+<!--
 If specified, the `.spec.template.metadata.labels` must be equal to the `.spec.selector`, or it will
 be rejected by the API.  If `.spec.selector` is unspecified, it will be defaulted to
 `.spec.template.metadata.labels`.
+-->
+`.spec.template.metadata.labels` を指定する場合は、 `.spec.selector` と一緒にする必要があります。そうしないと API から拒否されます。
+もしも `.spec.selector` を指定しなければ、`.spec.template.metadata.labels` がデフォルトとなります。
 
+<!--
 Also you should not normally create any pods whose labels match this selector, either directly, with 
 another ReplicationController, or with another controller such as Job. If you do so, the
 ReplicationController thinks that it created the other pods.  Kubernetes does not stop you
 from doing this.
+-->
+また、通常はラベルがセレクタと一致するポッドを作成すべきではありません。
+どうしても必要があれば、他の ReplicationController を直接使うか、ジョブのような他のコントローラを使います。
+そうしておけば、ReplicationController は他のポッドが作成されたと考えます。
+こうすることで、Kubernetes は作成したものを停止しません。
 
+<!--
 If you do end up with multiple controllers that have overlapping selectors, you
 will have to manage the deletion yourself (see [below](#working-with-replicationcontrollers)).
+-->
+もしも、最終的に複数のコントローラを使うことになれば、セレクタが重複するでしょう。そのような場合は、自分自身で削除を管理する必要があります（詳細は [以下](#working-with-replicationcontrollers)）。
 
+<!--
 ### Multiple Replicas
+-->
+### 複数の複製{#multiple-replicas}
+
 
 You can specify how many pods should run concurrently by setting `.spec.replicas` to the number
 of pods you would like to have running concurrently.  The number running at any time may be higher

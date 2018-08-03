@@ -1,5 +1,5 @@
 ---
-title: "Controllers"
+title: "コントローラ"
 weight: 20
 ---
 
