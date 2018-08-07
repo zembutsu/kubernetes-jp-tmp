@@ -2,20 +2,32 @@
 reviewers:
 - bgrant0607
 - janetkuo
-title: Deployments
+title: Deployments（デプロイメント）
 content_template: templates/concept
 weight: 30
 ---
 
 {{% capture overview %}}
 
+<!--
 A _Deployment_ controller provides declarative updates for [Pods](/docs/concepts/workloads/pods/pod/) and
 [ReplicaSets](/docs/concepts/workloads/controllers/replicaset/).
+-->
+_Deployment（デプロイメント）_ コントローラは  [ポッド](/jp/docs/concepts/workloads/pods/pod/)  と[ReplicaSets（レプリカ・セット）](/docs/concepts/workloads/controllers/replicaset/) に対して宣言型の更新機能を提供します。
 
+<!--
 You describe a _desired state_ in a Deployment object, and the Deployment controller changes the actual state to the desired state at a controlled rate. You can define Deployments to create new ReplicaSets, or to remove existing Deployments and adopt all their resources with new Deployments.
+-->
+Deployment オブジェクトで _desired state（期待状態）_ を記述すると、デプロイメント・コントローラは現在の状態を期待状態へ変更するような調整を制御します。
+新しい ReplicaSets を作成するため、Deployment を定義できます。あるいは、Deployment から既存のものを削除し、全てのリソースが新しい Deployment を採用するようにします。
 
 {{< note >}}
+<!--
 **Note:** You should not manage ReplicaSets owned by a Deployment. All the use cases should be covered by manipulating the Deployment object. Consider opening an issue in the main Kubernetes repository if your use case is not covered below.
+-->
+**メモ：** Deployment によって所有されている ReplicaSet は自分自身で管理すべきではありません。
+全ての利用例は Deployment オブジェクトによって操作されるのが前提です。
+
 {{< /note >}}
 
 {{% /capture %}}
@@ -23,10 +35,17 @@ You describe a _desired state_ in a Deployment object, and the Deployment contro
 
 {{% capture body %}}
 
+<!--
 ## Use Case
+-->
+## 利用例 {#use-case}
 
+<!--
 The following are typical use cases for Deployments:
+-->
+以下は典型的な Deployment の利用例です：
 
+<!--
 * [Create a Deployment to rollout a ReplicaSet](#creating-a-deployment). The ReplicaSet creates Pods in the background. Check the status of the rollout to see if it succeeds or not.
 * [Declare the new state of the Pods](#updating-a-deployment) by updating the PodTemplateSpec of the Deployment. A new ReplicaSet is created and the Deployment manages moving the Pods from the old ReplicaSet to the new one at a controlled rate. Each new ReplicaSet updates the revision of the Deployment.
 * [Rollback to an earlier Deployment revision](#rolling-back-a-deployment) if the current state of the Deployment is not stable. Each rollback updates the revision of the Deployment.
@@ -34,16 +53,33 @@ The following are typical use cases for Deployments:
 * [Pause the Deployment](#pausing-and-resuming-a-deployment) to apply multiple fixes to its PodTemplateSpec and then resume it to start a new rollout.
 * [Use the status of the Deployment](#deployment-status) as an indicator that a rollout has stuck.
 * [Clean up older ReplicaSets](#clean-up-policy) that you don't need anymore.
+-->
+* [ReplicaSet を展開する Deployment を作成](#creating-a-deployment)。ReplicaSet はバックグランドでポッドを作成します。成功したかどうかを確認するには、ロールアウト（rollout）のステータスを確認します。
+* [ポッドの新しい状態宣言](#updating-a-deployment) を Deployment の PodTemplateSpec で更新します。新しい ReplicaSet is が作成され、Deployment はポッドが古い ReplicaSet から新しいものへ移動する調整を管理します。それぞれの新しい ReplicaSet は Deployment のリビジョンによって更新されます。
+* もしも Deployment の現在の状態を取得できなければ [直前の Deployment リビジョンにロールバック（巻き戻す）](#rolling-back-a-deployment)します。それぞれのロールバックは Deployment のリビジョンを更新します。
+* [より高い負荷に対応するため Deployment をスケールアップする](#scaling-a-deployment)。
+* [Deploymentの一次停止](#pausing-and-resuming-a-deployment) を、PodTemplateSpec による複数の変更を適用するため、そして新しいものが展開（ロールアウト）したら再開します。
+* スタックをロールアウトする時に、状態を表示する（インディケータ）ため[Deployment のステータスを使う](#deployment-status)。
+* [以前の ReplicaSet をクリーンアップ（掃除）する](#clean-up-policy) that you don't need anymore.
 
-
+<!--
 ## Creating a Deployment
+-->
+## Deployment の作成 {#ceating-a-deployment}
 
+<!--
 The following is an example of a Deployment. It creates a ReplicaSet to bring up three `nginx` Pods:
+-->
+以下は Deployment の例です。`nginx` ポッドが３つある ReplicaSet を作成します。
 
 {{< codenew file="controllers/nginx-deployment.yaml" >}}
 
+<!--
 In this example:
+-->
+この例では：
 
+<!--
 * A Deployment named `nginx-deployment` is created, indicated by the `.metadata.name` field.
 * The Deployment creates three replicated Pods, indicated by the `replicas` field.
 * The `selector` field defines how the Deployment finds which Pods to manage.
@@ -54,41 +90,72 @@ In this example:
   the Pods run one container, `nginx`, which runs the `nginx`
   [Docker Hub](https://hub.docker.com/) image at version 1.7.9.
 * The Deployment opens port 80 for use by the Pods.
+-->
+* `nginx-deployment` という名前の Deployment を作成する。 `.metadata.name` フィールドで名前が指定されている。
+* Deployment は `replicasf` フィールドで指定されている３つの複製ポッドを作成する。
+* Deployment が管理対象のポッドを識別するための、 `selector` フィールドを定義する。今回の例では、ポッド・テンプレート内でのラベル定義（ `app: nginx`）を指定するのみ。しかしながら、ポッド・テンプレート自身のルールを満たす限り、より高度な選択ルールも必要であれば指定できます。
+* ポッド・テンプレートの仕様（specification） 、すなわち `.template.spec` フィールドで、ポッドが１つのコンテナを実行するのを示します。コンテナは `nginx` であり、 [Docker Hub](https://hub.coker.com/) イメージのバージョン 1.7.9 を使います。
+* Deployment はポッドのためにポート  80 を開きます。
 
 {{< note >}}
+<!--
 **Note:** `matchLabels` is a map of {key,value} pairs. A single {key,value} in the `matchLabels` map 
 is equivalent to an element of `matchExpressions`, whose key field is "key", the operator is "In",
 and the values array contains only "value". The requirements are ANDed.
+-->
+**メモ：**  `matchLables` はマップの {キー,値}のペアです。`matchLables` 内の１つの {キー,値} は、は `matchExpressions` の要素と同等であり、このキーにあるフィールドは "key" として、演算子は "In" であり、配列に入っている値が "value" です（key フィールドに入っているものが value です）。必要条件は AND化です。
 {{< /note >}}
 
+<!--
 The `template` field contains the following instructions:
+-->
+`template` フィールドは以下の指示を含みます：
 
+```
 * The Pods are labeled `app: nginx`
 * Create one container and name it `nginx`.
 * Run the `nginx` image at version `1.7.9`.
 * Open port `80` so that the container can send and accept traffic.
+```
+* ポッドは `app: nginx` のラベルを付ける
+* １つのコンテナを作成し、 `nginx` と名付ける
+* `nginx` イメージのバージョン `1.7.9` を実行
+* ポート `80` を開き、コンテナがトラフィックの送受信を可能とする
 
+<!--
 To create this Deployment, run the following command:
+--
+この Deployment を作成するには、以下のコマンドを実行します：
 
 ```shell
 kubectl create -f  https://k8s.io/examples/controllers/nginx-deployment.yaml
 ```
 
 {{< note >}}
+<!--
 **Note:** You can append `--record` to this command to record the current command in the annotations of
 the created or updated resource. This is useful for future review, such as investigating which
 commands were executed in each Deployment revision.
+-->
+**メモ：**  コマンドに `--record` を追加出来ます。これはリソースを作成または更新しても、現在のコマンドをアノテーションに記録します。これは各 Deployment の改訂（リビジョン：）ごと調査用のコマンドを実行するなど、将来的なレビューに役立ちます。
 {{< /note >}}
 
+<!--
 Next, run `kubectl get deployments`. The output is similar to the following:
+-->
+次に `kubectl get deployments` を実行します。出力結果は以下のようになります：
 
 ```shell
 NAME               DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 nginx-deployment   3         0         0            0           1s
 ```
 
+<!--
 When you inspect the Deployments in your cluster, the following fields are displayed:
+-->
+クラスタ内の Deployment を調べるために、以下のフィールドが表示されています：
 
+<!--
 * `NAME` lists the names of the Deployments in the cluster.
 * `DESIRED` displays the desired number of _replicas_ of the application, which
    you define when you create the Deployment. This is the _desired state_.
@@ -98,41 +165,76 @@ When you inspect the Deployments in your cluster, the following fields are displ
 * `AVAILABLE` displays how many replicas of the application are available to
    your users.
 * `AGE` displays the amount of time that the application has been running.
+-->
+* `NAME` はクラスタ内の Deployment の名前を一覧表示
+* `DISIRED`  はアプリケーションの期待する _複製_ 数（replica数）を表示します。これは Deployment の作成時に指定したものです。これが _期待状態（desired state）_ です。
+* `CURRENT`  は現在実行中の複製（レプリカ）を表示します。
+* `UP-TO-DATE` は期待状態に到達するため、いくつのレプリカを実行中か表示します。
+* `AVAILABLE` はアプリケーションの複製（レプリカ）をユーザがいくつ使えるか表示します。
+* `AGE` はアプリケーションが実行中になってから経過した時間を表示します。
 
+<!--
 Notice how the values in each field correspond to the values in the Deployment specification:
+-->
+各フィールドの値が、Deployment 仕様（Deployment spec）における値に相当しますのでご注意ください。
 
+<!--
 * The number of desired replicas is 3 according to `.spec.replicas` field.
 * The number of current replicas is 0 according to the `.status.replicas` field.
 * The number of up-to-date replicas is 0 according to the `.status.updatedReplicas` field.
 * The number of available replicas is 0 according to the `.status.availableReplicas` field.
+-->
+* `.spec.replicas` フィールドによると、期待する複製（レプリカ）数は３。
+* `.status.replica` フィールドによると、現在の複製数は０。
+* `.status.updatedReplicas` フィールドによると、最新の（up-to-date）複製数は０。
+* `.status.availableReplicas` フィールドによると、利用できる複製数は０。
 
+<!--
 To see the Deployment rollout status, run `kubectl rollout status deployment/nginx-deployment`. This command returns the following output:
+-->
+Deployment の展開ステータスを表示するには、 `kubectl rollout status deployment/nginx-deployment` を実行します。このコマンドは以下の出力を返します。
 
 ```shell
 Waiting for rollout to finish: 2 out of 3 new replicas have been updated...
 deployment "nginx-deployment" successfully rolled out
 ```
+（展開が完了するまで待機中。３つのうち２つの新しい服し枝が更新中……デプロイメント "nginx-deployment" は展開に成功）
 
+<!--
 Run the `kubectl get deployments` again a few seconds later:
+-->
+`kubectl get deployments` を数秒後に再び実行します：
 
 ```shell
 NAME               DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 nginx-deployment   3         3         3            3           18s
 ```
 
+<!--
 Notice that the Deployment has created all three replicas, and all replicas are up-to-date (they contain the
 latest Pod template) and available (the Pod status is Ready for at least the value of the Deployment's `.spec.minReadySeconds` field).
+-->
+Deployment で３つの複製が全て作成されたのに注目します。また、複製は最新（up-to-date）（ここには最新のポッド・テンプレートも含みます）かつ利用可能（available）（Deployment の `.spec.minReadySeconds` フィールドにある最新のポッドのステータス値が Ready＝準備完了のもの ）です。
 
+<!--
 To see the ReplicaSet (`rs`) created by the deployment, run `kubectl get rs`:
+-->
+デプロイメントによって作成された ReplicaSet (`rs`) を表示するには、 `kubectl get rc` を実行します。
 
 ```shell
 NAME                          DESIRED   CURRENT   READY   AGE
 nginx-deployment-2035384211   3         3         3       18s
 ```
 
+<!--
 Notice that the name of the ReplicaSet is always formatted as `[DEPLOYMENT-NAME]-[POD-TEMPLATE-HASH-VALUE]`. The hash value is automatically generated when the Deployment is created.
+-->
+ReplicaSet によって作成される名前は、常に `{デプロイメント名}-{ポッド・テンプレート-ハッシュ値}` の形式なのがわかります。ハッシュ値はデプロイメントの作成時に自動的に生成されるものです。
 
+<!--
 To see the labels automatically generated for each pod, run `kubectl get pods --show-labels`. The following output is returned:
+-->
+各ポッドには自動的に生成されたラベルが割り当てられます。表示するには `kubectl get pods --show-labels` を実行すると、以下の出力結果が戻ります：
 
 ```shell
 NAME                                READY     STATUS    RESTARTS   AGE       LABELS
@@ -141,47 +243,80 @@ nginx-deployment-2035384211-kzszj   1/1       Running   0          18s       app
 nginx-deployment-2035384211-qqcnn   1/1       Running   0          18s       app=nginx,pod-template-hash=2035384211
 ```
 
+<!--
 The created ReplicaSet ensures that there are three `nginx` Pods running at all times.
+-->
+作成した ReplicaSet は、常に３つの `nginx` ポッド実行を確保します。
 
 {{< note >}}
+<!--
 **Note:** You must specify an appropriate selector and Pod template labels in a Deployment (in this case,
 `app: nginx`). Do not overlap labels or selectors with other controllers (including other Deployments and StatefulSets). Kubernetes doesn't stop you from overlapping, and if multiple controllers have overlapping selectors those controllers might conflict and behave unexpectedly.
+-->
+**メモ：** デプロイメントでは適切なセレクタとポッド・テンプレート・ラベルの指定を必ず行ってください（この例では `app:nginx` です）。ラベルやセレクタは他のコントローラと重複しないようにしてください（他のデプロイメントや StatefulSets も含みます）。Kubernetes は重複による停止は行いません。そして、もし複数のコントローラが重複するセレクタを持つ場合、各コントローラは衝突
+もしくは予期しない挙動を起こす可能性があります
 {{< /note >}}
 
+<!--
 ### Pod-template-hash label
+-->
+### ポッド・テンプレートのハッシュ値ラベル
 
 {{< note >}}
+<!--
 **Note:** Do not change this label.
+-->
+**メモ：** このラベルを変更しないでください。
 {{< /note >}}
 
+<!--
 The `pod-template-hash` label is added by the Deployment controller to every ReplicaSet that a Deployment creates or adopts.
+-->
+`pod-template-hash`ラベルはデプロイメント・コントローラにより、デプロイメントによって作成または採用された全ての ReplicaSet に対して追加されます。
 
+<!--
 This label ensures that child ReplicaSets of a Deployment do not overlap. It is generated by hashing the `PodTemplate` of the ReplicaSet and using the resulting hash as the label value that is added to the ReplicaSet selector, Pod template labels,
 and in any existing Pods that the ReplicaSet might have.
+-->
+このラベルはデプロイメントの子 ReplicaSet と重複しないようにします。ReplicaSet の `PodTemplate` のハッシュをもとに作成されるものです。得られたハッシュを使い、ラベルの値として指定します。ReplicaSet が持っているであろうラベルの値は、 ReplicaSet セレクタ、ポッド・テンプレート・ラベル、そして、あらゆる既存のポッドに対して追加されます。
 
+<!--
 ## Updating a Deployment
+-->
+## デプロイメントの更新 {#updating-a-deployment}
 
 {{< note >}}
+<!--
 **Note:** A Deployment's rollout is triggered if and only if the Deployment's pod template (that is, `.spec.template`)
 is changed, for example if the labels or container images of the template are updated. Other updates, such as scaling the Deployment, do not trigger a rollout.
+-->
+**メモ：**  デプロイメントのポッド・テンプレートが変更された時のみ（ここでは `.spec.template` ）、デプロイメントを展開（rollout）する処理開始（トリガ）となります。例えば、テンプレートのラベルまたはコンテナ・イメージの更新です。デプロイメントのスケーリングなど、その他の変更時は展開を開始しません。
 {{< /note >}}
 
+<!--
 Suppose that we now want to update the nginx Pods to use the `nginx:1.9.1` image
 instead of the `nginx:1.7.9` image.
+-->
+nginx ポッドを `nginx:1.7.9` を使うイメージから`nginx:1.9.1` イメージへ更新したいと仮定しましょう。
 
 ```shell
 $ kubectl set image deployment/nginx-deployment nginx=nginx:1.9.1
 deployment "nginx-deployment" image updated
 ```
 
+<!--
 Alternatively, we can `edit` the Deployment and change `.spec.template.spec.containers[0].image` from `nginx:1.7.9` to `nginx:1.9.1`:
+-->
+あるいは、デプロイメントを編集（`edit`）して、  `.spec.template.spec.containers[0].image` を `nginx:1.7.9` から `1.9.1` に変更します。
 
 ```shell
 $ kubectl edit deployment/nginx-deployment
 deployment "nginx-deployment" edited
 ```
-
+<!_-
 To see the rollout status, run:
+-->
+展開状態を表示するには、次のように実行します：
 
 ```shell
 $ kubectl rollout status deployment/nginx-deployment
@@ -189,7 +324,10 @@ Waiting for rollout to finish: 2 out of 3 new replicas have been updated...
 deployment "nginx-deployment" successfully rolled out
 ```
 
+<!--
 After the rollout succeeds, you may want to `get` the Deployment:
+-->
+展開に成功したら、デプロイメントの状態を取得（ `get` ）したいでしょう：
 
 ```shell
 $ kubectl get deployments
@@ -197,12 +335,19 @@ NAME               DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 nginx-deployment   3         3         3            3           36s
 ```
 
+<!--
 The number of up-to-date replicas indicates that the Deployment has updated the replicas to the latest configuration.
 The current replicas indicates the total replicas this Deployment manages, and the available replicas indicates the
 number of current replicas that are available.
+-->
+最新の（up-to-date）複製数が示すのは、最新の設定情報によって、デプロイメントの複製数が変更されたことです。現在の複製数（current replicas）が示すのは、このデプロイメントが管理している合計複製数のうち、現在利用できる複製の数です。
 
+<!--
 We can run `kubectl get rs` to see that the Deployment updated the Pods by creating a new ReplicaSet and scaling it
 up to 3 replicas, as well as scaling down the old ReplicaSet to 0 replicas.
+-->
+`kubectl get rs` を実行すると、デプロイメントがポッドを更新するため、新しい ReplicaSet を作成して３つの複製にスケールします。同様に古い ReplicaSet の複製を０に変更するためスケールダウンします。
+
 
 ```shell
 $ kubectl get rs
@@ -211,7 +356,10 @@ nginx-deployment-1564180365   3         3         3       6s
 nginx-deployment-2035384211   0         0         0       36s
 ```
 
+<!--
 Running `get pods` should now show only the new Pods:
+-->
+`get pods` を実行すると、表示されているのは新しいポッドのみです：
 
 ```shell
 $ kubectl get pods
@@ -221,18 +369,32 @@ nginx-deployment-1564180365-nacti   1/1       Running   0          14s
 nginx-deployment-1564180365-z9gth   1/1       Running   0          14s
 ```
 
+<!--
 Next time we want to update these Pods, we only need to update the Deployment's pod template again.
+-->
+次に、これらのポッドを更新します。必要なのはデプロイメントのポッド・テンプレートの再編集のみです。
 
+<!--
 Deployment can ensure that only a certain number of Pods may be down while they are being updated. By
 default, it ensures that at least 25% less than the desired number of Pods are up (25% max unavailable).
+-->
+デプロイメントは更新によって停止するポッド数が一定数に収まるようにします。デフォルトでは、（訳者注：停止中となるポッドの数は）ポッド期待値の 25% に収まるようにします（最大で 25% 利用できなくなります）。
 
+<!--
 Deployment can also ensure that only a certain number of Pods may be created above the desired number of
 Pods. By default, it ensures that at most 25% more than the desired number of Pods are up (25% max surge).
+-->
 
+また、デプロイメントは作成済みのポッド数を一定数維持します。デフォルトでは、ポッド期待値の 25% 以上を（訳者注：常に実行中のポッドを一定数確保しながら）実行するようにします（25% が設定可能な上限です）。
+
+<!--
 For example, if you look at the above Deployment closely, you will see that it first created a new Pod,
 then deleted some old Pods and created new ones. It does not kill old Pods until a sufficient number of
 new Pods have come up, and does not create new Pods until a sufficient number of old Pods have been killed.
 It makes sure that number of available Pods is at least 2 and the number of total Pods is at most 4.
+-->
+たとえば、先ほどのデプロイメントを詳しく見ると、まず始めに新しいポッドを作成し、その後に古いポッドを作成し、それから新しいポッドを作成するのが分かります。十分な数の新しいポッドが起動しない、古いポッドを削除しません。そして、十分な数の古いポッドを停止（kill）するまで、新しいポッドを作成しません。これにより、利用可能なポッド数は最小２つであり、合計のポッド数は最大で４です。
+
 
 ```shell
 $ kubectl describe deployments
@@ -274,41 +436,66 @@ Events:
   Normal  ScalingReplicaSet  14s   deployment-controller  Scaled down replica set nginx-deployment-2035384211 to 0
 ```
 
+<!--
 Here we see that when we first created the Deployment, it created a ReplicaSet (nginx-deployment-2035384211)
 and scaled it up to 3 replicas directly. When we updated the Deployment, it created a new ReplicaSet
 (nginx-deployment-1564180365) and scaled it up to 1 and then scaled down the old ReplicaSet to 2, so that at
 least 2 Pods were available and at most 4 Pods were created at all times. It then continued scaling up and down
 the new and the old ReplicaSet, with the same rolling update strategy. Finally, we'll have 3 available replicas
 in the new ReplicaSet, and the old ReplicaSet is scaled down to 0.
+-->
+こちらで分かるのは、まずデプロイメントを作成し、デプロイメントは ReplicaSet（nginx-deployment-2035384211）を作成,し、直接３つの複製（レプリカ）にスケールアップします。デプロイメントの更新によって、新しい ReplicaSet（nginx-deployment-1564180365）を１つ作成し、古い ReplicaSet を２にスケールダウンします。その結果、スクアンクとも２つのポッドが利用可能であり、同時に４つのポッドが同時に利用できるようになります。同じローリング・アップデート方針（strategy）に従って、新旧 ReplicaSet のスケールアップとダウンが続きます。最終的には新しい ReplicaSet で３つの複製（レプリカ）が利用可能となり、古い ReplicaSet は０にスケールダウンします。
 
+<!--
 ### Rollover (aka multiple updates in-flight)
+-->
+### ロールオーバ（rollover：載せ替え）（別名、実行しながら同時更新）{#rollover-aka-multiple-update-in-flight}
 
+<!--
 Each time a new deployment object is observed by the Deployment controller, a ReplicaSet is created to bring up
 the desired Pods if there is no existing ReplicaSet doing so. Existing ReplicaSet controlling Pods whose labels
 match `.spec.selector` but whose template does not match `.spec.template` are scaled down. Eventually, the new
 ReplicaSet will be scaled to `.spec.replicas` and all old ReplicaSets will be scaled to 0.
+-->
+デプロイメント・コントローラによって新しいデプロイメント・オブジェクトが見つけられるたびに、既存の ReplicaSet で行えることが何もなければ、ReplicaSet は期待する（望ましい）ポッドを作り出します。既存の ReplicaSet が制御するポッドは `.spec.selector` のラベルに一致するものですが、 `.spec.template` に一致しないものはスケールダウンします。最終的には新しい ReplicaSet は `.spec.replicas` までスケールし、古い ReplicaSetは０に規模変更（スケールします。
 
+<!--
 If you update a Deployment while an existing rollout is in progress, the Deployment will create a new ReplicaSet
 as per the update and start scaling that up, and will roll over the ReplicaSet that it was scaling up previously
  -- it will add it to its list of old ReplicaSets and will start scaling it down.
+-->
+もしも既存のロールアウトが進行中にデプロイメントを更新すると、デプロイメントは新しい ReplicaSet を更新の一部として作成し、スケールアップを開始します。これによって、以前にスケールアップした ReplicaSet はロールオーバー（載せ替え）となるため、そのためには、古い ReplicaSet の一覧に追加され、いずれスケールダウンが始まります。
 
+<!--
 For example, suppose you create a Deployment to create 5 replicas of `nginx:1.7.9`,
 but then updates the Deployment to create 5 replicas of `nginx:1.9.1`, when only 3
 replicas of `nginx:1.7.9` had been created. In that case, Deployment will immediately start
 killing the 3 `nginx:1.7.9` Pods that it had created, and will start creating
 `nginx:1.9.1` Pods. It will not wait for 5 replicas of `nginx:1.7.9` to be created
 before changing course.
+-->
+たとえば、 `nginx:1.7.9` の複製５つを作成するデプロイメントを作成したと仮定します。 `nginx:1.9.1` の複製を５つ作成するようデプロイメントを更新しようとしますが、 `nginx:1.7.9` が３つしか作成されていません。このような場合、デプロイメントは直ちに作成済みの `nginx:1.7.9` ポッドを停止開始します。そして、 `nginx:1.9.1` の作成を開始します。方針を変えず、以前に作成した方針は変更せず、 `nginx:1.7.9` の複製が５つになるのを待ちません。
 
+<!--
 ### Label selector updates
+-->
+### ラベル・セレクタの更新 {#label-selector-updates}
 
+<!--
 It is generally discouraged to make label selector updates and it is suggested to plan your selectors up front.
 In any case, if you need to perform a label selector update, exercise great caution and make sure you have grasped
 all of the implications.
+-->
+一般的にラベル・セレクタの更新を行うべきではなく、事前にセレクタを計画しておくのを推奨します。ラベル・セレクタの更新処理が必要な場合は、どのようなときも、重大な注意を払いながら、予想されうるすべてを確実に把握する必要があります。
 
 {{< note >}}
+<!--
 **Note:** In API version `apps/v1`, a Deployment's label selector is immutable after it gets created.
+-->
+**メモ：** API バージョン `apps/v1` では、デプロイメントのラベルセレクタを作成後は変更できません（イミュータブルです）。
 {{< /note >}}
 
+<!--
 * Selector additions require the pod template labels in the Deployment spec to be updated with the new label too,
 otherwise a validation error is returned. This change is a non-overlapping one, meaning that the new selector does
 not select ReplicaSets and Pods created with the old selector, resulting in orphaning all old ReplicaSets and
@@ -317,41 +504,69 @@ creating a new ReplicaSet.
 * Selector removals -- that is, removing an existing key from the Deployment selector -- do not require any changes in the
 pod template labels. No existing ReplicaSet is orphaned, and a new ReplicaSet is not created, but note that the
 removed label still exists in any existing Pods and ReplicaSets.
+-->
+* セレクタを追加するには、デプロイメント spec 内のポッド・テンプレート・ラベルに新しいラベルの追加も必要です。そうしなければ、整合性（バリデーション）エラーを返します。この変更にあたって、重複は不可能です。新しいセレクタは古いセレクタによって作成された ReplicaSet とポッドを選択できません。つまり、古い ReplicaSet で作成されたものだけでなく、新しい ReplicaSet で作成されいたものすべてが孤立します（訳者注：操作できなくなります）。
+* セレクタの更新 - つまり、セレクタ・キーにある既存の値の変更を意味します。この結果、先ほどの説明と同じ挙動となります。
+* セレクタの削除 - これは、デプロイメントのセレクタから既存のキーの削除を意味します。つまり、ポッド・テンプレートのラベルには、変更に必要なものが何もなくなります。ReplicaSet はどれも孤立状態となり、新しい ReplicaSet も作成できなくなります。しかし、既存のポッドや ReplicaSet に対するラベルの削除は可能です。
 
+<!--
 ## Rolling Back a Deployment
+-->
+## デプロイメントの巻き戻し（ローリング・バック） {#rolling-back-deployment}
 
+<!--
 Sometimes you may want to rollback a Deployment; for example, when the Deployment is not stable, such as crash looping.
 By default, all of the Deployment's rollout history is kept in the system so that you can rollback anytime you want
 (you can change that by modifying revision history limit).
+-->
+たまにはデプロイメントを巻き戻し（ロールバック）したい場合があるでしょう。たとえば、クラッシュがループするなど、デプロイメントが安定しない場合です。デフォルトでは、デプロイメントすべての展開（ロールアウト）履歴がシステム上に保管されるため、必要があればいつでも巻き戻せます（変更履歴の上限は変更可能です）。
 
 {{< note >}}
+<!--
 **Note:** A Deployment's revision is created when a Deployment's rollout is triggered. This means that the
 new revision is created if and only if the Deployment's pod template (`.spec.template`) is changed,
 for example if you update the labels or container images of the template. Other updates, such as scaling the Deployment,
 do not create a Deployment revision, so that we can facilitate simultaneous manual- or auto-scaling.
 This means that when you roll back to an earlier revision, only the Deployment's pod template part is
 rolled back.
+-->
+**メモ：** デプロイメントの展開（ロールアウト）が行われると、デプロイメントの履歴（リビジョン）が作成されます。つまり、新しい履歴（リビジョン）が作成されるのは、デプロイメントのポッド・テンプレート（ `.spec.template` ）変更時のみです。たとえば、テンプレートのラベルやコンテナ・イメージを更新したとします。他の更新、たとえばデプロイメントのスケーリング（規模変更など）では、デプロイメントの履歴（リビジョン）を作成しません。そのため、擬似的な手動もしくはオート・スケーリングを可能とします。つまり、以前の履歴（リビジョン）にロールバックすると、デプロイメントのポッド・テンプレートの部分のみがロールバックされるのです。
 {{< /note >}}
 
+<!--
 Suppose that we made a typo while updating the Deployment, by putting the image name as `nginx:1.91` instead of `nginx:1.9.1`:
+-->
+デプロイメントの更新にあたって入力間違いがあったと仮定します。イメージ名を `1.9.1` ではなく、 `nginx:1.91` としてしまいました：
+
 
 ```shell
 $ kubectl set image deployment/nginx-deployment nginx=nginx:1.91
 deployment "nginx-deployment" image updated
 ```
 
+<!--
 The rollout will be stuck.
+-->
+展開は固まってしまいます。
 
 ```shell
 $ kubectl rollout status deployments nginx-deployment
 Waiting for rollout to finish: 2 out of 3 new replicas have been updated...
 ```
 
+<!--
 Press Ctrl-C to stop the above rollout status watch. For more information on stuck rollouts,
 [read more here](#deployment-status).
+-->
+このような展開状態が表示されたら、 Ctrl-C を入力して中断します。
+展開が固まる件の詳細については [こちら](#deployment-status) をご覧ください。
 
+<!--
 You will also see that both the number of old replicas (nginx-deployment-1564180365 and
 nginx-deployment-2035384211) and new replicas (nginx-deployment-3066724191) are 2.
+-->
+また、古い複製（nginx-deployment-1564180365 と nginx-deployment-2035384211）の両方が見えます。
+また、新しい複製（nginx-deployment-3066724191）は２つです。
 
 ```shell
 $ kubectl get rs
@@ -360,8 +575,10 @@ nginx-deployment-1564180365   2         2         0       25s
 nginx-deployment-2035384211   0         0         0       36s
 nginx-deployment-3066724191   2         2         2       6s
 ```
-
+<!--
 Looking at the Pods created, you will see that the 2 Pods created by new ReplicaSet are stuck in an image pull loop.
+-->
+作成されたポッドを調べると、新しい ReplicaSet によって作成された２つのポッドがありますが、イメージの取得ループで固まっています。
 
 ```shell
 $ kubectl get pods
@@ -373,11 +590,18 @@ nginx-deployment-3066724191-eocby   0/1       ImagePullBackOff   0          6s
 ```
 
 {{< note >}}
+<!--
 **Note:** The Deployment controller will stop the bad rollout automatically, and will stop scaling up the new
 ReplicaSet. This depends on the rollingUpdate parameters (`maxUnavailable` specifically) that you have specified.
 Kubernetes by default sets the value to 1 and `.spec.replicas` to 1 so if you haven't cared about setting those
 parameters, your Deployment can have 100% unavailability by default! This will be fixed in Kubernetes in a future
 version.
+-->
+**メモ：** デプロイメント・コントローラは状態が悪いロールアウト（展開）を自動的に停止し、新しい ReplicaSet のスケールアップも停止します。
+この挙動はローリング・アップデートのパラメータ（`maxUnavailable` を明確に）指定がある場合、そのパラメータに依存します。
+Kubernetes はデフォルトで値が 1 のため、設定時にパラメータの指定がなければ `.spec.replicas` も 1 になります。
+そのため、デプロイメントはデフォルトでは 100% 利用できなくなる可能性があります。
+これは将来の Kubernetes では修正されます。
 {{< /note >}}
 
 ```shell
