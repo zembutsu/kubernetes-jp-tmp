@@ -131,14 +131,16 @@ To create this Deployment, run the following command:
 kubectl create -f  https://k8s.io/examples/controllers/nginx-deployment.yaml
 ```
 
-{{< note >}}
 <!--
 **Note:** You can append `--record` to this command to record the current command in the annotations of
 the created or updated resource. This is useful for future review, such as investigating which
 commands were executed in each Deployment revision.
 -->
+
+{{< note >}}
 **メモ：**  コマンドに `--record` を追加出来ます。これはリソースを作成または更新しても、現在のコマンドをアノテーションに記録します。これは各 Deployment の改訂（リビジョン：）ごと調査用のコマンドを実行するなど、将来的なレビューに役立ちます。
 {{< /note >}}
+
 
 <!--
 Next, run `kubectl get deployments`. The output is similar to the following:
@@ -631,11 +633,20 @@ Events:
   13s       13s         1       {deployment-controller }                Normal      ScalingReplicaSet   Scaled up replica set nginx-deployment-3066724191 to 2
 ```
 
+<!--
 To fix this, we need to rollback to a previous revision of Deployment that is stable.
+-->
+こちらを修正するには、デプロイメントを安定版である以前のバージョンに巻き戻す必要があります。
 
+<!--
 ### Checking Rollout History of a Deployment
+-->
+### デプロイメントの展開履歴を確認 {#checking-rollout-history-of-a-deployment}
 
+<!--
 First, check the revisions of this deployment:
+-->
+まず、このデプロイメントの履歴（リビジョン）を確認します。
 
 ```shell
 $ kubectl rollout history deployment/nginx-deployment
@@ -646,10 +657,16 @@ REVISION    CHANGE-CAUSE
 3           kubectl set image deployment/nginx-deployment nginx=nginx:1.91
 ```
 
+<!--
 Because we recorded the command while creating this Deployment using `--record`, we can easily see
 the changes we made in each revision.
+-->
+デプロイメントの作成時に `--record` を使って記録するコマンドを指定したため、各履歴ごとの変更箇所を簡単に確認できます。
 
+<!--
 To further see the details of each revision, run:
+-->
+各履歴の更なる詳細を表示するには、次のように実行します：
 
 ```shell
 $ kubectl rollout history deployment/nginx-deployment --revision=2
@@ -668,26 +685,42 @@ deployments "nginx-deployment" revision 2
   No volumes.
 ```
 
+<!--
 ### Rolling Back to a Previous Revision
+-->
+### 以前の履歴に巻き戻す（ロールバック） {#rolling-back-to-a-previous-revision}
 
+<!--
 Now we've decided to undo the current rollout and rollback to the previous revision:
+-->
+ここでは現在の展開を取り消し、以前の履歴に巻き戻すのを決めました。
 
 ```shell
 $ kubectl rollout undo deployment/nginx-deployment
 deployment "nginx-deployment" rolled back
 ```
 
+<!--
 Alternatively, you can rollback to a specific revision by specify that in `--to-revision`:
+-->
+あるいは、 `--to-revision` で特定の履歴（リビジョン）にロールバックもできます：
 
 ```shell
 $ kubectl rollout undo deployment/nginx-deployment --to-revision=2
 deployment "nginx-deployment" rolled back
 ```
 
+<!--
 For more details about rollout related commands, read [`kubectl rollout`](/docs/reference/generated/kubectl/kubectl-commands#rollout).
+-->
+展開（ロールアウト）に関連する詳しい情報は、 [`kubectl rollout`](/jp/docs/reference/generated/kubectl/kubectl-commands#rollout) をご覧ください。
 
+<!--
 The Deployment is now rolled back to a previous stable revision. As you can see, a `DeploymentRollback` event
 for rolling back to revision 2 is generated from Deployment controller.
+-->
+これでデプロイメントは以前の安定版に巻き戻りました。
+`DeploymentRollback` イベントを見ると、デプロイメント・コントローラによって作成されたリビジョン２に巻き戻ったのが分かります。
 
 ```shell
 $ kubectl get deployment
@@ -722,32 +755,52 @@ Events:
   29m       2m          2       {deployment-controller }                Normal      ScalingReplicaSet   Scaled up replica set nginx-deployment-1564180365 to 3
 ```
 
+<!--
 ## Scaling a Deployment
+-->
+## デプロイメントのスケーリング {#scaling-a-deployment}
 
+<!--
 You can scale a Deployment by using the following command:
+-->
+以下のコマンドを使ってデプロイメントをスケールできます：
 
 ```shell
 $ kubectl scale deployment nginx-deployment --replicas=10
 deployment "nginx-deployment" scaled
 ```
 
+<!--
 Assuming [horizontal pod autoscaling](/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/) is enabled
 in your cluster, you can setup an autoscaler for your Deployment and choose the minimum and maximum number of
 Pods you want to run based on the CPU utilization of your existing Pods.
+-->
+クラスタ内で [水平ポッド・オートスケーリング（horizontal pod autoscaling）](/jp/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/) が有効と仮定すると、デプロイメントに対してオートスケーラ（autoscaler）をセットアップできます。そして、稼働しているポッドの CPU 使用率に基づいて動くよう、ポッドの最小数と最大数を選択できます。
 
 ```shell
 $ kubectl autoscale deployment nginx-deployment --min=10 --max=15 --cpu-percent=80
 deployment "nginx-deployment" autoscaled
 ```
 
+<!--
 ### Proportional scaling
+-->
+### プロモーショナル（比例）・スケーリング {#proomtional-scaling}
 
+<!--
 RollingUpdate Deployments support running multiple versions of an application at the same time. When you
 or an autoscaler scales a RollingUpdate Deployment that is in the middle of a rollout (either in progress
 or paused), then the Deployment controller will balance the additional replicas in the existing active
 ReplicaSets (ReplicaSets with Pods) in order to mitigate risk. This is called *proportional scaling*.
+-->
+RollingUpdate（ローリング・アップデート）デプロイメントは、アプリケーションの複数バージョン同時実行をサポートします。
+自分でもしくはオートスケーラによって、ロールアウト中に（進行中もしくは一次停止中だとしても）RollingUpdate デプロイメントをスケールする場合、移行のリスク（危険性）があるため、デプロイメント・コントローラは追加の複製と既存のアクティブな ReplicaSet （ポッドとレプリカセット）バランスを取ります。
+これを *「プロモーショナル（比例）・スケーリング」（promotional scaling）* と呼びます。
 
+<!--
 For example, you are running a Deployment with 10 replicas, [maxSurge](#max-surge)=3, and [maxUnavailable](#max-unavailable)=2.
+-->
+たとえば、10の複製があるデプロイメントを実行中で、 [maxSurge](#max-surge)=3 、 [maxUnavailable](#max-unavailable)=2 とします。
 
 ```shell
 $ kubectl get deploy
@@ -755,15 +808,21 @@ NAME                 DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 nginx-deployment     10        10        10           10          50s
 ```
 
+<!--
 You update to a new image which happens to be unresolvable from inside the cluster.
+-->
+クラスタの内部で解決不可能な新しいイメージに更新します。
 
 ```shell
 $ kubectl set image deploy/nginx-deployment nginx=nginx:sometag
 deployment "nginx-deployment" image updated
 ```
 
+<!--
 The image update starts a new rollout with ReplicaSet nginx-deployment-1989198191, but it's blocked due to the
 `maxUnavailable` requirement that we mentioned above.
+-->
+イメージの更新が始まり、レプリカセット nginx-deployment-1989198191 を新規に展開（ロールアウト開始）しますが、先ほど言及したように、 `maxUnavailable` によってブロックされます。
 
 ```shell
 $ kubectl get rs
@@ -771,17 +830,30 @@ NAME                          DESIRED   CURRENT   READY     AGE
 nginx-deployment-1989198191   5         5         0         9s
 nginx-deployment-618515232    8         8         8         1m
 ```
-
+<!--
 Then a new scaling request for the Deployment comes along. The autoscaler increments the Deployment replicas
 to 15. The Deployment controller needs to decide where to add these new 5 replicas. If we weren't using
 proportional scaling, all 5 of them would be added in the new ReplicaSet. With proportional scaling, we
 spread the additional replicas across all ReplicaSets. Bigger proportions go to the ReplicaSets with the
 most replicas and lower proportions go to ReplicaSets with less replicas. Any leftovers are added to the
 ReplicaSet with the most replicas. ReplicaSets with zero replicas are not scaled up.
+-->
+それから、デプロイメントに対する新しいスケーリング要求が発生します。
+オートスケーラはデプロイメントの複製を 15 に増やします。
+デプロイメント・コントローラは、どこに新しい５つの複製を追加するか決める必要があります。
+もしも、プロポーショナル（比例）・スケーリングを使用していなければ、５つすべてを新しいレプリカセットに追加します。
+プロポーショナル（比例）・スケーリングに対応していれば、追加の複製を全てのレプリカセットを横断して展開します。
+比率が大きければレプリカ・セットは複製を増やし、比率が低ければレプリカ・セットは複製を減らします。
+複製が余ったら、複製が多いレプリカ・セットに追加されます。
+レプリカ・セットのレプリカがゼロであれば、スケールアップしません。
 
+<!--
 In our example above, 3 replicas will be added to the old ReplicaSet and 2 replicas will be added to the
 new ReplicaSet. The rollout process should eventually move all replicas to the new ReplicaSet, assuming
 the new replicas become healthy.
+-->
+先ほどの例では、３つの複製は古いレプリカ・セットに追加され、２つの福祉が新しいレプリカセットに追加されます。
+この展開作業は、最終的には全ての複製が新しいレプリカ・セットに移動し、すべての複製が正常（healthy）になったとみなされます。
 
 ```shell
 $ kubectl get deploy
@@ -793,12 +865,22 @@ nginx-deployment-1989198191   7         7         0         7m
 nginx-deployment-618515232    11        11        11        7m
 ```
 
+<!--
 ## Pausing and Resuming a Deployment
+-->
+## デプロイメントの一次停止と再開 {#pausing-and-resuming-a-deployment}
 
+<!--
 You can pause a Deployment before triggering one or more updates and then resume it. This will allow you to
 apply multiple fixes in between pausing and resuming without triggering unnecessary rollouts.
+-->
+１つまたは複数の更新をトリガとして、デプロイメントの一次停止（pause）と再開（resume）が可能です。
+これによって、不要なロールアウトをトリガとすることなく、一次停止と再開を複数適用できるようにします。
 
+<!--
 For example, with a Deployment that was just created:
+-->
+たとえば、デプロイメントを作成していたとします。
 
 ```shell
 $ kubectl get deploy
@@ -809,21 +891,30 @@ NAME               DESIRED   CURRENT   READY     AGE
 nginx-2142116321   3         3         3         1m
 ```
 
+<!--
 Pause by running the following command:
+-->
+一次停止するには以下のコマンドを実行します：
 
 ```shell
 $ kubectl rollout pause deployment/nginx-deployment
 deployment "nginx-deployment" paused
 ```
 
+<!--
 Then update the image of the Deployment:
+-->
+それから、デプロイメントのイメージを更新します。
 
 ```shell
 $ kubectl set image deploy/nginx-deployment nginx=nginx:1.9.1
 deployment "nginx-deployment" image updated
 ```
 
+<!--
 Notice that no new rollout started:
+-->
+新しいロールアウトは開始されないのに注目します：
 
 ```shell
 $ kubectl rollout history deploy/nginx-deployment
@@ -836,17 +927,27 @@ NAME               DESIRED   CURRENT   READY     AGE
 nginx-2142116321   3         3         3         2m
 ```
 
+<!--
 You can make as many updates as you wish, for example, update the resources that will be used:
+-->
+必要があれば、どれだけでも更新できます。たとえば、リソースを更新するために使うには：
 
 ```shell
 $ kubectl set resources deployment nginx-deployment -c=nginx --limits=cpu=200m,memory=512Mi
 deployment "nginx-deployment" resource requirements updated
 ```
 
+<!--
 The initial state of the Deployment prior to pausing it will continue its function, but new updates to
 the Deployment will not have any effect as long as the Deployment is paused.
+-->
+デプロイメントの初期状態は、機能によって一次停止されていたとしても、デプロイメントに対する新しい更新はデプロイメントが停止している限り何ら影響を与えません。
 
+<!--
 Eventually, resume the Deployment and observe a new ReplicaSet coming up with all the new updates:
+-->
+最終的には、デプロイメントは再開し、新しいレプリカ・セットが全ての新しい更新を見つけ出します。
+
 
 ```shell
 $ kubectl rollout resume deploy/nginx-deployment
@@ -875,36 +976,76 @@ nginx-3926361531   3         3         3         28s
 ```
 
 {{< note >}}
+<!--
 **Note:** You cannot rollback a paused Deployment until you resume it.
+-->
+**メモ：** 一時停止中のデプロイメントは再開しない限り、巻き戻し（ロールバック）できません。
 {{< /note >}}
 
+<!--
 ## Deployment status
+-->
+## デプロイメント状態（ステータス）  {#deployment-status}
 
+<!--
 A Deployment enters various states during its lifecycle. It can be [progressing](#progressing-deployment) while
 rolling out a new ReplicaSet, it can be [complete](#complete-deployment), or it can [fail to progress](#failed-deployment).
+-->
+デプロイメントは、そのライフサイクルで様々な状態に遷移します。
+新しいレプリカ・セットの展開に応じて、[完了](#complete-deployment) または[処理失敗](#failed-deployment)といった [プロセッシング（processing：手続き／処理）](#progressing-deployment) が可能です。
 
+<!--
 ### Progressing Deployment
+-->
+### デプロイメントの進行中（Progressing Deployment） {#progressing-deployment}
 
+<!--
 Kubernetes marks a Deployment as _progressing_ when one of the following tasks is performed:
+-->
+以下のタスクのうち１つでも処理する時、Kubernetes はデプロイメントを _progressing（進行中）_　にマークします：
 
+<!--
 * The Deployment creates a new ReplicaSet.
 * The Deployment is scaling up its newest ReplicaSet.
 * The Deployment is scaling down its older ReplicaSet(s).
 * New Pods become ready or available (ready for at least [MinReadySeconds](#min-ready-seconds)).
+-->
+* デプロイメントは新しいレプリカ・セットを作成
+* デプロイメントは最も新しいレプリカ・セットにスケールアップ
+* デプロイメントは古いレプリカ・セットにスケールダウン
+* 新しいポッドが利用可能になる（少なくとも [MinReadySeconds（最小待機秒（](#min-ready-seconds) を待機）
 
+<!--
 You can monitor the progress for a Deployment by using `kubectl rollout status`.
+-->
+デプロイメントの進捗は `kubectl rollout status` で監視できます。
 
+<!--
 ### Complete Deployment
+-->
+### デプロイメントの完了（Complete Deployment） {#complete-deployment}
 
+<!--
 Kubernetes marks a Deployment as _complete_ when it has the following characteristics:
+-->
+以下の特徴があれば、Kubernetes はデプロイメントを _complete（完了）_ とマークします。
 
+<!--
 * All of the replicas associated with the Deployment have been updated to the latest version you've specified, meaning any
 updates you've requested have been completed.
 * All of the replicas associated with the Deployment are available.
 * No old replicas for the Deployment are running.
+-->
+* デプロイメントに関連付けられたすべての複製が指定されたバージョンに更新されている。つまり、リクエスト済みのあらゆる更新が完了。
+* デプロイメントに関連付けられたすべての複製（レプリカ）が利用可能。
+* デプロイメントい対する古い複製が一切動作していない。
 
+<!--
 You can check if a Deployment has completed by using `kubectl rollout status`. If the rollout completed
 successfully, `kubectl rollout status` returns a zero exit code.
+-->
+デプロイメントが完了したかどうかは `kubectl rollout status` を使って確認できます。
+もしもロールアウトが完了していたら、 `kubectl rollout status` はゼロの終了コードを返します。
 
 ```shell
 $ kubectl rollout status deploy/nginx-deployment
@@ -914,54 +1055,103 @@ $ echo $?
 0
 ```
 
+<!--
 ### Failed Deployment
+-->
+### デプロイメント失敗（Failed Deployment） {#failed-deployment}
 
+<!--
 Your Deployment may get stuck trying to deploy its newest ReplicaSet without ever completing. This can occur
 due to some of the following factors:
+-->
+最も新しいレプリカ・セットが完了しなければ、デプロイメントはデプロイの試みに行き詰まります。
+以下の要素のいくつかによって、このような状況が発生します：
 
+<!--
 * Insufficient quota
 * Readiness probe failures
 * Image pull errors
 * Insufficient permissions
 * Limit ranges
 * Application runtime misconfiguration
+-->
+* 容量制限（クォータ）が足りない
+* 読込性診断の失敗
+* イメージ取得（pull）エラー
+* 権限（パーミッション）が足りない
+* 範囲の制限
+* アプリケーション・ランタイムの設定ミス
 
+<!--
 One way you can detect this condition is to specify a deadline parameter in your Deployment spec:
 ([`.spec.progressDeadlineSeconds`](#progress-deadline-seconds)). `.spec.progressDeadlineSeconds` denotes the
 number of seconds the Deployment controller waits before indicating (in the Deployment status) that the
 Deployment progress has stalled.
+-->
+この状況を検出する１つの方法は、デプロイメント spec でデッドライン・パラメータ（deadline parameter）の指定 （[`.spec.progressDeadlineSeconds`](#progress-deadline-seconds)） です。
+`.spec.progressDeadlineSeconds` が意味するのは、デプロイメント処理の失速が始まってから、デプロイメント・コントローラが待機する秒数です。
 
+<!--
 The following `kubectl` command sets the spec with `progressDeadlineSeconds` to make the controller report
 lack of progress for a Deployment after 10 minutes:
+-->
+以下の `kubectl` コマンドは spec に `progressDeadlineSeconds` を指定します。
+これは、デプロイメントの進捗残りが10分以下になれば、がコントローラに対して報告させます。
 
 ```shell
 $ kubectl patch deployment/nginx-deployment -p '{"spec":{"progressDeadlineSeconds":600}}'
 deployment "nginx-deployment" patched
 ```
+
+<!--
 Once the deadline has been exceeded, the Deployment controller adds a DeploymentCondition with the following
 attributes to the Deployment's `.status.conditions`:
+-->
+デッドラインに到達すると、デプロイメント・コントローラはデプロイメントの `.status.conditions` に対して `DeploymentCondition` と以下の属性を追加します。
 
+<!--
 * Type=Progressing
 * Status=False
 * Reason=ProgressDeadlineExceeded
+-->
+* Type=Progressing（処理進行）
+* Status=False（失敗）
+* Reason=ProgressDeadlineExceeded（処理がデッドラインに到達）
 
+<!--
 See the [Kubernetes API conventions](https://git.k8s.io/community/contributors/devel/api-conventions.md#typical-status-properties) for more information on status conditions.
+-->
+ステータス状況に関する詳しい状況は [Kubernetes API conventions](https://git.k8s.io/community/contributors/devel/api-conventions.md#typical-status-properties) をご覧ください。
 
 {{< note >}}
+<!--
 **Note:** Kubernetes will take no action on a stalled Deployment other than to report a status condition with
 `Reason=ProgressDeadlineExceeded`. Higher level orchestrators can take advantage of it and act accordingly, for
 example, rollback the Deployment to its previous version.
+-->
+**メモ：** Kubernetes は固まったままのデプロイメントに対して何も行動を起こさず、ステータス状況で `Reason=ProgressDeadlineExceeded` を示すだけです。
+高度なオーケストレータであれば、これをうまく利用し、適切に処理するでしょう。
+例えば、デプロイメントを以前のバージョンに巻き戻すなどです。
 {{< /note >}}
 
 {{< note >}}
+<!--
 **Note:** If you pause a Deployment, Kubernetes does not check progress against your specified deadline. You can
 safely pause a Deployment in the middle of a rollout and resume without triggering the condition for exceeding the
 deadline.
+-->
+**メモ：** もしもデプロイメントを一次停止（pause）すると、Kubernetes は指定したデッドラインに対する進捗を確認しません。
+ロールアウトの途中でデプロイメントの一次停止を安全に行い、状況のトリガがデッドラインに到達するまでに再開（resume）できます。
 {{< /note >}}
 
+<!--
 You may experience transient errors with your Deployments, either due to a low timeout that you have set or
 due to any other kind of error that can be treated as transient. For example, let's suppose you have
 insufficient quota. If you describe the Deployment you will notice the following section:
+-->
+デプロイメントに対しては一時的なエラーが出るかもしれません。
+それは、指定したタイムアウト時間を経過したか、他の何らかのエラーの発生によるものです。
+これらのエラーは短期的なもの（transient）として扱われます。
 
 ```shell
 $ kubectl describe deployment nginx-deployment
@@ -975,7 +1165,10 @@ Conditions:
 <...>
 ```
 
+<!--
 If you run `kubectl get deployment nginx-deployment -o yaml`, the Deployment status might look like this:
+-->
+`kubectl get deployment nginx-deployment -o yaml` を実行すると、デプロイメントのステータスはこのようになります：
 
 ```
 status:
@@ -1005,8 +1198,11 @@ status:
   unavailableReplicas: 2
 ```
 
+<!--
 Eventually, once the Deployment progress deadline is exceeded, Kubernetes updates the status and the
 reason for the Progressing condition:
+-->
+最終的には、デプロイメント進捗デッドラインに到達すると、Kubernetes は状態（ステータス）と進捗状況（Progressing condition）の理由を更新します：
 
 ```
 Conditions:
@@ -1017,10 +1213,16 @@ Conditions:
   ReplicaFailure  True    FailedCreate
 ```
 
+<!--
 You can address an issue of insufficient quota by scaling down your Deployment, by scaling down other
 controllers you may be running, or by increasing quota in your namespace. If you satisfy the quota
 conditions and the Deployment controller then completes the Deployment rollout, you'll see the
 Deployment's status update with a successful condition (`Status=True` and `Reason=NewReplicaSetAvailable`).
+ｰｰ>
+デプロイメントのスケールダウンにより、不十分なクォータ（容量割り当て）があれば問題を発生します。
+これは実行中の他のコントローラをスケールダウンしてしまうか、あるいは、自分の名前空間内でクォータ（容量割り当て）を増やすと発生します。
+クォータ状態とデプロイメント・コントローラを充足するには、デプロイメントの展開（ロールアウト）を完了します。
+そうすると、デプロイメントのステータスは成功状態（ `Status=True` and `Reason=NewReplicaSetAvailable`）へと更新されます。
 
 ```
 Conditions:
@@ -1030,14 +1232,23 @@ Conditions:
   Progressing   True    NewReplicaSetAvailable
 ```
 
+<!--
 `Type=Available` with `Status=True` means that your Deployment has minimum availability. Minimum availability is dictated
 by the parameters specified in the deployment strategy. `Type=Progressing` with `Status=True` means that your Deployment
 is either in the middle of a rollout and it is progressing or that it has successfully completed its progress and the minimum
 required new replicas are available (see the Reason of the condition for the particulars - in our case
 `Reason=NewReplicaSetAvailable` means that the Deployment is complete).
+-->
+`Type=Available` にある `Status=True` の意味は、デプロイメントが最小の可用性を持っています。
+最小の可用性を決めるのは、デプロイメント方針（strategy：ストラテジ）で指定するパラメータです。
+`Type=Progressing` にある `Status=True` の意味は、デプロイメントが展開（ロールアウト）の途中であり処理が進行中か、あるいは、進捗の完了に成功し、最小限必要な新しい複製が利用可能となっています（個々の状況における理由をご覧ください。今回の例では `Reason=NewReplicaSetAvailable` は、デプロイメントの完了を意味します）。
 
+<!--
 You can check if a Deployment has failed to progress by using `kubectl rollout status`. `kubectl rollout status`
 returns a non-zero exit code if the Deployment has exceeded the progression deadline.
+-->
+デプロイメントの進行が失敗したかどうかを調べるには、 `kubectl rollout status` を使います。
+`kubectl rollout status` が０以外の終了コードを返す場合、デプロイメントは処理のデッドラインへ到達しています。
 
 ```shell
 $ kubectl rollout status deploy/nginx-deployment
@@ -1047,166 +1258,367 @@ $ echo $?
 1
 ```
 
+<!--
 ### Operating on a failed deployment
+-->
+### デプロイメントが失敗した場合の操作 {#operating-on-a-failed-deployment}
 
+<!--
 All actions that apply to a complete Deployment also apply to a failed Deployment. You can scale it up/down, roll back
 to a previous revision, or even pause it if you need to apply multiple tweaks in the Deployment pod template.
+-->
+全てのアクションはデプロイメントに完全適用されるだけでなく、デプロイメントへの適用失敗もあります。
+スケールアップ・ダウンや以前のバージョンに戻したり、一次停止にあたっては、デプロイメント・ポッド・テンプレートの調整が必要になります。
 
+<!--
 ## Clean up Policy
+-->
+## クリーンアップ方針 {#clean-up-policy}
 
+<!--
 You can set `.spec.revisionHistoryLimit` field in a Deployment to specify how many old ReplicaSets for
 this Deployment you want to retain. The rest will be garbage-collected in the background. By default,
 it is 10.
+-->
+デプロイメントで古いレプリカ・セットをいくつ保持する（retain）かは、デプロイメントの `.spec.revisionHistoryLimit` フィールドで指定できます。
+何も処理が発生しなければ、ガベージコレクション（garbage-collected）がバックグラウンドで進行します。
+デフォルトでは 10 です。
 
 {{< note >}}
+<!--
 **Note:** Explicitly setting this field to 0, will result in cleaning up all the history of your Deployment
 thus that Deployment will not be able to roll back.
+-->
+**メモ** このフィールドを０と明示すると、デプロイメントの履歴もクリーンアップします。その結果、デプロイメントはロールバックできなくなります。
+
 {{< /note >}}
 
+<!--
 ## Use Cases
+-->
+### 使用例
 
+<!--
 ### Canary Deployment
+-->
+### カナリア・デプロイメント（Canary Deployemnt{}）
 
+<!--
 If you want to roll out releases to a subset of users or servers using the Deployment, you
 can create multiple Deployments, one for each release, following the canary pattern described in
 [managing resources](/docs/concepts/cluster-administration/manage-deployment/#canary-deployments).
+-->
+ユーザまたはデプロイメントによって用いられるサーバのサブセット（一部）を展開（ロールアウト）するにあたり、複数のデプロイメントを作成できます。
+それぞれのリリースごとに複数のデプロイメントを作成できます。カナリア・パターンの詳細んついては [リソースの管理](/jp/docs/concepts/cluster-administration/manage-deployment/#canary-deployments) をご覧ください。
 
+<!--
 ## Writing a Deployment Spec
+-->
+## デプロイメント spec を書く {#writing-a-deployment-spec}
 
+<!--
 As with all other Kubernetes configs, a Deployment needs `apiVersion`, `kind`, and `metadata` fields.
 For general information about working with config files, see [deploying applications](/docs/tutorials/stateless-application/run-stateless-application-deployment/),
 configuring containers, and [using kubectl to manage resources](/docs/concepts/overview/object-management-kubectl/overview/) documents.
+-->
+他の Kubernetes 設定と同様に、デプロイメントは `apiVersion` 、 `kind` 、 `metadata` フィールドが必要です。
+設定ファイルに関する共通情報については、 [アプリケーションのデプロイ](/jp/docs/tutorials/stateless-application/run-stateless-application-deployment/)、 [リソース管理のために kubectl を使う) コンテナの設定のドキュメントをご覧ください。
 
+<!--
 A Deployment also needs a [`.spec` section](https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status).
+-->
+また、デプロイメントには [`.spec` セクション](https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status) が必要です。
 
+<!--
 ### Pod Template
+-->
+### ポッド・テンプレート {#pod-template}
 
+<!--
 The `.spec.template` is the only required field of the `.spec`.
+-->
+`.spec.template` は `.spec` で唯一必要なフィールドです。
 
+<!--
 The `.spec.template` is a [pod template](/docs/concepts/workloads/pods/pod-overview/#pod-templates). It has exactly the same schema as a [Pod](/docs/concepts/workloads/pods/pod/), except it is nested and does not have an
 `apiVersion` or `kind`.
+-->
+`.spec.template` は [ポッド・テンプレート](/jp/docs/concepts/workloads/pods/pod-overview/#pod-templates) です。
+実際には [ポッド](/jp/docs/concepts/workloads/pods/pod/) と同じスキーマですが、ネスト化でき `apiVersion` や `kind` を持たないのを除外します。
 
+<!--
 In addition to required fields for a Pod, a pod template in a Deployment must specify appropriate
 labels and an appropriate restart policy. For labels, make sure not to overlap with other controllers. See [selector](#selector)).
+-->
+ポッドに対する必要なフィールドに加え、デプロイメントでのポッド・テンプレートには適切なラベルと適切な再起動ポリシーの指定が必須です。
+ラベルについては、他のコントローラとは重複しないようにしてください。詳細は [セレクタ](#selector) をご覧ください。
 
+<!--
 Only a [`.spec.template.spec.restartPolicy`](/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy) equal to `Always` is
 allowed, which is the default if not specified.
+-->
+[`.spec.template.spec.restartPolicy`](/jp/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy) を指定しなければ、デフォルトでは常に `Always` が指定されたものと同等になります。
 
+<!--
 ### Replicas
+-->
+### 複製（レプリカ） #replicas
 
+<!--
 `.spec.replicas` is an optional field that specifies the number of desired Pods. It defaults to 1.
+-->
+`.spec.replicas` は期待するポッド（desired Pods）の数を指定する、オプションのフィールドです。デフォルトは１です。
 
+<!--
 ### Selector
+-->
+### セレクタ {#selector}
 
+<!--
 `.spec.selector` is an optional field that specifies a [label selector](/docs/concepts/overview/working-with-objects/labels/)
 for the Pods targeted by this deployment.
+-->
+`.spec.selector` はオプションのフィールドであり、デプロイメントにおいて対象となるポッドを [ラベル・セレクタ（label selector）](/jp/docs/concepts/overview/working-with-objects/labels/) を指定します。
 
+<!--
 `.spec.selector` must match `.spec.template.metadata.labels`, or it will be rejected by the API.
+-->
+`.spec.selector` は `.spec.template.metadata.labels` と一致する必要があります。そうでなければ、API によって拒否されます。
 
+<!--
 In API version `apps/v1`, `.spec.selector` and `.metadata.labels` do not default to `.spec.template.metadata.labels` if not set. So they must be set explicitly. Also note that `.spec.selector` is immutable after creation of the Deployment in `apps/v1`.
+-->
+API バージョン `apps/v1` では、 `.spec.selector` と `.metadata.labels` がセットされないため、デフォルトで `.spec.template.metadata.labels` が設定されます。
+そのため、これらは明示する必要があります。
+また、`apps/v1` では `.spec.selector` はデプロイメントの作成後に変更できない（イミュータブル）のでご注意ください。
 
+<!--
 A Deployment may terminate Pods whose labels match the selector if their template is different
 from `.spec.template` or if the total number of such Pods exceeds `.spec.replicas`. It brings up new
 Pods with `.spec.template` if the number of Pods is less than the desired number.
+-->
+デプロイメントはポッドによって終了させられる場合があります。それは、デプロイメントのラベルがセレクタと一致するときや、
+`.spec.template` とテンプレートのセレクタが一致しない場合、 ポッドが  `.spec.replicas` の合計数を上回る場合です。
+期待数よりもポッドの数が少なくなれば、 `.spec.template` に従って新しいポッドを立ち上げます。
 
 {{< note >}}
+<!--
 **Note:** You should not create other pods whose labels match this selector, either directly, by creating
 another Deployment, or by creating another controller such as a ReplicaSet or a ReplicationController. If you
 do so, the first Deployment thinks that it created these other pods. Kubernetes does not stop you from doing this.
+-->
+**メモ:** セレクタと一致するラベルを作成すべきではありません。それだけでなく、直接または他のデプロイメントによる作成
+、レプリカ・セットやレプリケーション・コントローラなどのよって作成されるデプロイメントもです。
+もし作成すると、１つめに作成したデプロイメントが他のポッドを作成したと認識してしまいます。
+Kubernetes はこれを止められません。
 {{< /note >}}
 
+<!--
 If you have multiple controllers that have overlapping selectors, the controllers will fight with each
 other and won't behave correctly.
+-->
+もしもセレクタが重複する複数のコントローラが有る場合には、コントローラがお互いに衝突し、正しい動作をしない可能性があります。
 
+<!--
 ### Strategy
+-->
+### ストラテジ（方針） {#strategy}
 
+<!--
 `.spec.strategy` specifies the strategy used to replace old Pods by new ones.
 `.spec.strategy.type` can be "Recreate" or "RollingUpdate". "RollingUpdate" is
 the default value.
+-->
+`.spec.strategy` とは、古いポッドを新しいポッドに置き換えるときに使うストラテジ（方針）です。
+`.spec.strategy.type` は、デフォルト値 "Recreate"、"RollingUpdate"、"RollingUpdate" を更新可能です。
 
+<!---
 #### Recreate Deployment
+--->
+#### デプロイメントの再作成 {#recreate-deployment}
 
 All existing Pods are killed before new ones are created when `.spec.strategy.type==Recreate`.
 
-#### Rolling Update Deployment
+`.spec.strategy.type==Recreate` を指定すると、全ての既存のポッドは、新しいポッドを作成する前に削除します。
 
+<!--
+#### Rolling Update Deployment
+-->
+### ローリング・アップデート・デプロイメント {#rolling-update-deployment}
+
+<!--
 The Deployment updates Pods in a [rolling update](/docs/tasks/run-application/rolling-update-replication-controller/)
 fashion when `.spec.strategy.type==RollingUpdate`. You can specify `maxUnavailable` and `maxSurge` to control
 the rolling update process.
+-->
+デプロイメントは `.spec.strategy.type==RollingUpdate` の指定があれば、ポッドを[ローリング・アップデート](/jp/docs/tasks/run-application/rolling-update-replication-controller/)でアップデートします。
+ローリング・アップデートの処理を管理するために、 `maxUnavailable` と `maxSurge` を指定できます。
 
+<!--
 ##### Max Unavailable
+--->
+##### 最大利用不可数（Max Unavailable） {#max-unavailable}
 
+<!--
 `.spec.strategy.rollingUpdate.maxUnavailable` is an optional field that specifies the maximum number
 of Pods that can be unavailable during the update process. The value can be an absolute number (for example, 5)
 or a percentage of desired Pods (for example, 10%). The absolute number is calculated from percentage by
 rounding down. The value cannot be 0 if `.spec.strategy.rollingUpdate.maxSurge` is 0. The default value is 25%.
+-->
 
+`.spec.strategy.rollingUpdate.maxUnavailable` はアップデート処理中に利用できなくなるポッドの最大数を指定するための、オプションのフィールドです。
+この値は絶対値（例、5）か期待ポッドのパーセンテージ（例、10% ）で指定します。
+パーセンテージによって計算される絶対値は、端数を切り捨てます。
+もし `.spec.strategy.rollingUpdate.maxSurge` が 0 であっても、この値は 0 になりません。
+デフォルトの値は 25% です。
+
+<!--
 For example, when this value is set to 30%, the old ReplicaSet can be scaled down to 70% of desired
 Pods immediately when the rolling update starts. Once new Pods are ready, old ReplicaSet can be scaled
 down further, followed by scaling up the new ReplicaSet, ensuring that the total number of Pods available
 at all times during the update is at least 70% of the desired Pods.
+-->
+例えば、この値を 30% に指定すると、ローリング・アップデートを開始すると、古いレプリカ・セットは期待ポッドの 70% まで直ちにスケールダウンします。
+新しいポッドの準備が整えば、古いレプリカ・セットは更にスケールダウンします。
+あわせて、新しいレプリカ・セットがスケールアップします。
+この時、利用可能なポット数の合計は、アップデート期間中は常に期待ポッド数の少なくとも 70% を維持し続けようとします。
 
+<!--
 ##### Max Surge
+--->
+### Max Surge（最大サージ／超過） {#mas-surge}
 
+<!--
 `.spec.strategy.rollingUpdate.maxSurge` is an optional field that specifies the maximum number of Pods
 that can be created over the desired number of Pods. The value can be an absolute number (for example, 5) or a
 percentage of desired Pods (for example, 10%). The value cannot be 0 if `MaxUnavailable` is 0. The absolute number
 is calculated from the percentage by rounding up. The default value is 25%.
+-->
+`.spec.strategy.rollingUpdate.maxSurge` はポッドの期待数を越えて作成可能な最大ポッド数を指定するための、オプションのフィールドです。
+この値は絶対値（例、5）か期待ポッドのパーセンテージ（例、10% ）で指定します。
+パーセンテージによって計算される絶対値は、端数を切り捨てます。
+もし `MaxUnavailable` が 0 であっても、この値は 0 になりません。
+デフォルトの値は 25% です。
 
+<!--
 For example, when this value is set to 30%, the new ReplicaSet can be scaled up immediately when the
 rolling update starts, such that the total number of old and new Pods does not exceed 130% of desired
 Pods. Once old Pods have been killed, the new ReplicaSet can be scaled up further, ensuring that the
 total number of Pods running at any time during the update is at most 130% of desired Pods.
+-->
+例えば、この値を 30% に指定すると、ローリング・アップデートを開始すると、新しいレプリカ・セットは新旧ポッドの合計数が、期待ポッドの 130% に到達するまで直ちにスケールアップします。
+古いポッドが停止（kill）されれば、新しいレプリカセットはさらにスケールアップします。
+この時、利用可能なポット数の合計は、アップデート期間中は常に期待ポッド数の最大で 130% を維持し続けようとします。
 
+
+<!--
 ### Progress Deadline Seconds
+--->
+### 進捗デッドライン秒（Progress Deadline Seconds） {#progress-deadline-seconds}
 
+<!--
 `.spec.progressDeadlineSeconds` is an optional field that specifies the number of seconds you want
 to wait for your Deployment to progress before the system reports back that the Deployment has
 [failed progressing](#failed-deployment) - surfaced as a condition with `Type=Progressing`, `Status=False`.
 and `Reason=ProgressDeadlineExceeded` in the status of the resource. The deployment controller will keep
 retrying the Deployment. In the future, once automatic rollback will be implemented, the deployment
 controller will roll back a Deployment as soon as it observes such a condition.
+-->
+`.spec.progressDeadlineSeconds` はデプロイメントが [処理に失敗（failed progressing（](#failed-deployment)  したとシステムが報告を返すまで、デプロイメントが進捗するのを待つ秒数を指定するための、オプションのフィールドです。
+状態を表示すると、`Type=Progressing` と `Status=False` 、および `Reason=ProgressDeadlineExceeded` が李祖巣のステータスに現れます。
+デプロイメント・コントローラはデプロイメントの再試行を維持します。
+将来的には、自動ロールバックが実装され、デプロイメント・コントローラはデプロイメントのロールバックを状況の変化に応じて行えるようになります。
 
+<!--
 If specified, this field needs to be greater than `.spec.minReadySeconds`.
+-->
+このフィールドを指定するにあたっては、 `.spec.minReadySeconds` よりも大きな値が必要です。
 
+<!--
 ### Min Ready Seconds
+-->
+### 最小待機秒（Min Ready Seconds）{#min-ready-seconds}
 
+<!--
 `.spec.minReadySeconds` is an optional field that specifies the minimum number of seconds for which a newly
 created Pod should be ready without any of its containers crashing, for it to be considered available.
 This defaults to 0 (the Pod will be considered available as soon as it is ready). To learn more about when
 a Pod is considered ready, see [Container Probes](/docs/concepts/workloads/pods/pod-lifecycle/#container-probes).
+-->
+`.spec.minReadySeconds` は最近作成されたポッドがコンテナのキャッシュのために待機し、準備が整ったとみなす最小の秒数を指定するオプションのフィールドです。
+これはデフォルトでは 0 です（ポッドは間もなく利用可能になるとみなします）。
+ポッドの準備が整ったとみなす条件については、  [Container Probes](/jp/docs/concepts/workloads/pods/pod-lifecycle/#container-probes) をご覧ください。
 
+<!--
 ### Rollback To
+-->
+### ロールバック先（Rollback To） {#rollback-to}
 
+<!--
 Field `.spec.rollbackTo` has been deprecated in API versions `extensions/v1beta1` and `apps/v1beta1`, and is no longer supported in API versions starting `apps/v1beta2`. Instead, `kubectl rollout undo` as introduced in [Rolling Back to a Previous Revision](#rolling-back-to-a-previous-revision) should be used.
+-->
+フィールド  `.spec.rollbackTo` は API バージョン `extensions/v1beta1` と `apps/v1beta1` で廃止されました。
+そして、 `apps/v1beta2` 移行ではサポートしなくなりました。
+そのかわりに、 `kubectl rollout undo` によってサポートされた [以前のバージョンへのロールバック](#rolling-back-to-a-previous-revision) を使うべきです。
 
+<!--
 ### Revision History Limit
+--->
+### リビジョン履歴上限（Revision History Limit） {#revision-history-limit}
 
+<!--
 A Deployment's revision history is stored in the replica sets it controls.
+-->
+デプロイメントのリビジョン履歴はコントローラのレプリカ・セットに保管されます。
 
+<!--
 `.spec.revisionHistoryLimit` is an optional field that specifies the number of old ReplicaSets to retain
 to allow rollback. Its ideal value depends on the frequency and stability of new Deployments. All old
 ReplicaSets will be kept by default, consuming resources in `etcd` and crowding the output of `kubectl get rs`,
 if this field is not set. The configuration of each Deployment revision is stored in its ReplicaSets;
 therefore, once an old ReplicaSet is deleted, you lose the ability to rollback to that revision of Deployment.
+-->
+`.spec.revisionHisoryLimit` は巻き戻し（ロールバック）できるように保持し続ける古い ReplicaSet の数を指定する、オプション・フィールドです。
+この理想的な値は、新しいデプロイメントによる繰り返しと安定性に依存します。
+もしこのフィールドの値を指定しなければ、全ての古いレプリカセットはデフォルトで維持されますが、 `etcd` のリソースを消費し、 `kubectl get rs` の出力から混み合っているのがわかります。
+各デプロイメントのリビジョンを保管する設定はレプリカ・セットにあります。
+つまり、古いレプリカ・セットが削除されれば、そこに格納されているデプロイメントのリビジョンにロールバックできなくなります。
 
+<!--
 More specifically, setting this field to zero means that all old ReplicaSets with 0 replica will be cleaned up.
 In this case, a new Deployment rollout cannot be undone, since its revision history is cleaned up.
+-->
+さらに具体的に書くと、このフィールドをゼロにすると、全ての古いレプリカ・セットは０複製となり、クリーンアップされるのを意味します。この例では、リビジョン履歴がクリーンアップされるまで、新しいデプロイメントのロールアウトは完了しません。
 
+<!--
 ### Paused
+--->
+### 一次停止（Paused） {#paused}
 
+<!--
 `.spec.paused` is an optional boolean field for pausing and resuming a Deployment. The only difference between
 a paused Deployment and one that is not paused, is that any changes into the PodTemplateSpec of the paused
 Deployment will not trigger new rollouts as long as it is paused. A Deployment is not paused by default when
 it is created.
+-->
+`.spec.paused` はデプロイメントの一次停止と再会のためのオプション・ブール演算（boolean）です。
+一次停止したデプロイメントと停止していないデプロイメントとの違いとは、一次停止している限り新しいロールアウトをトリガとしません。
+デプロイメントの作成時、デフォルトでは一次停止しません。
 
+<!--
 ## Alternative to Deployments
+-->
+## 代替デプロイメント {#alternative-to-deployments}
 
 ### kubectl rolling update
 
+<!--
 [`kubectl rolling update`](/docs/reference/generated/kubectl/kubectl-commands#rolling-update) updates Pods and ReplicationControllers
 in a similar fashion. But Deployments are recommended, since they are declarative, server side, and have
 additional features, such as rolling back to any previous revision even after the rolling update is done.
+-->
+[`kubectl rolling update`](/jp/docs/reference/generated/kubectl/kubectl-commands#rolling-update) はポッドとレプリケーション・コントローラを同様の手法で更新します。
+しかし、デプロイメントを使う方が推奨です。なぜならば、こちらは宣言型であり、サーバサイドであり、ローリング・アップデート後もあらゆる以前のバージョンに巻き戻せるロールバックのような追加機能があるからです。
 
 {{% /capture %}}
 

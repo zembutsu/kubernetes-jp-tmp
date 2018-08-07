@@ -6,17 +6,22 @@ reviewers:
 - janetkuo
 - kow3ns
 - smarterclayton
-title: StatefulSets
+title: StatefulSets（ステートフル・セット）
 content_template: templates/concept
 weight: 40
 ---
 
 {{% capture overview %}}
-
+<!--
 StatefulSet is the workload API object used to manage stateful applications.
+-->
+StatefulSet はステートフルなアプリケーションを管理するために使うワークロード API オブジェクトです。
 
 {{< note >}}
+<!--
 **Note:** StatefulSets are stable (GA) in 1.9.
+-->
+**メモ：** StatefulSets はバージョン 1.9 から安定版（GA）です。
 {{< /note >}}
 
 {{< glossary_definition term_id="statefulset" length="all" >}}
@@ -24,38 +29,80 @@ StatefulSet is the workload API object used to manage stateful applications.
 
 {{% capture body %}}
 
+<!--
 ## Using StatefulSets
+-->
+## StatefulSet を使う {#using-statefulsets}
 
+<!--
 StatefulSets are valuable for applications that require one or more of the
 following.
+-->
+StatefulSet は以下の１つもしくは複数の要件があるアプリケーションに有益です。
 
+<!--
 * Stable, unique network identifiers.
 * Stable, persistent storage.
 * Ordered, graceful deployment and scaling.
 * Ordered, graceful deletion and termination.
 * Ordered, automated rolling updates.
+-->
+* 安定した、ユニークなネットワーク識別子
+* 安定した、持続的ストレージ（保管領域）
+* 手入れの行き届いた、丁寧なデプロイメント（展開）とスケーリング（規模変更）
+* 手入れの行き届いた、丁寧な削除と停止
+* 手入れの行き届いた、自動化ローリング・アップデート（逐次更新）
 
+<!--
 In the above, stable is synonymous with persistence across Pod (re)scheduling.
 If an application doesn't require any stable identifiers or ordered deployment,
 deletion, or scaling, you should deploy your application with a controller that
 provides a set of stateless replicas. Controllers such as
 [Deployment](/docs/concepts/workloads/controllers/deployment/) or
 [ReplicaSet](/docs/concepts/workloads/controllers/replicaset/) may be better suited to your stateless needs.
+-->
+前述のとおり、ポッドの（再）スケーリングにおいて、安定性と持続性（persistence）とは同義語です。
+もしも、アプリケーションが安定した識別子、規則正しいデプロイメント（展開）、削除、スケーリング（規模変更）を必要としないのであれば、
+アプリケーションのデプロイはコントローラを使うべきでしょう。
+コントローラはステートレス（状態を持たない）な複製（レプリカ）の集まりを提供します。
+ステートレス（状態を持たない）が必要であれば、[Deployment（デプロイメント）](/jp/docs/concepts/workloads/controllers/deployment/) や [ReplicaSet（レプリカ・セット）](/jp/docs/concepts/workloads/controllers/replicaset/) のようなコントローラのほうが適しているでしょう。
 
+<!--
 ## Limitations
+-->
+## 制限事項 {#Limitations}
 
+<!--
 * StatefulSet was a beta resource prior to 1.9 and not available in any Kubernetes release prior to 1.5.
 * As with all alpha/beta resources, you can disable StatefulSet through the `--runtime-config` option passed to the apiserver.
 * The storage for a given Pod must either be provisioned by a [PersistentVolume Provisioner](https://github.com/kubernetes/examples/tree/{{< param "githubbranch" >}}/staging/persistent-volume-provisioning/README.md) based on the requested `storage class`, or pre-provisioned by an admin.
 * Deleting and/or scaling a StatefulSet down will *not* delete the volumes associated with the StatefulSet. This is done to ensure data safety, which is generally more valuable than an automatic purge of all related StatefulSet resources.
 * StatefulSets currently require a [Headless Service](/docs/concepts/services-networking/service/#headless-services) to be responsible for the network identity of the Pods. You are responsible for creating this Service.
+-->
+* StatefulSet は 1.9 未満ではベータ・リソースであり、1.5 未満の Kubernetes では利用できません。
+* 全てのアルファ/ベータのリソースと同様に、apiserver に渡すオプションで `--runtime-config` を指定すると、StatefulSet を無効化できます。
+* ポッドに対して与えられるストレージは、 `storage class` の要求に基づく  [PersistentVolume Provisioner](https://github.com/kubernetes/examples/tree/{{< param "githubbranch" >}}/staging/persistent-volume-provisioning/README.md) によって供給（プロビジョン）されるか、管理者によって予め供給（プロビジョニング）済みのどちらの必要があります。
+* StatefulSet の削除やスケーリング・ダウンでは、StatefulSet に関連付けられたボリュームを削除*しません* 。これはデータの安全性を確保するために行うものであり、StatefulSet リソースに関連する全てのリソースを自動的に切り離すよりも重要です。
+* StatefulSet は、ポッドをネットワーク上で識別する役割ために現時点で [Headless Service](/jp/docs/concepts/services-networking/service/#headless-services) が必要です。あなたはサービスの作成に責任を持つ必要があります。
 
+<!--
 ## Components
-The example below demonstrates the components of a StatefulSet.
+-->
+## 構成要素（コンポーネント） {#components}
 
+<!--
+The example below demonstrates the components of a StatefulSet.
+-->
+以下の例は StatefulSet の構成要素を示します。
+
+<!--
 * A Headless Service, named nginx, is used to control the network domain.
 * The StatefulSet, named web, has a Spec that indicates that 3 replicas of the nginx container will be launched in unique Pods.
 * The volumeClaimTemplates will provide stable storage using [PersistentVolumes](/docs/concepts/storage/persistent-volumes/) provisioned by a PersistentVolume Provisioner.
+-->
+* nginx という名前の Headless Service（ヘッドレス・サービス） を、ネットワーク・ドメインの管理に使う
+* web という名前の StatefulSet は、nginx コンテナの複製を３つを、それぞれユニークなポッドとして起動するSpec（仕様）があります。
+* volumeClaimTemplates は PersistentVolume プロビジョナ（供給機能）による [PersistentVolumes（持続ボリューム）](/jp/docs/concepts/storage/persistent-volumes/)  を使う安定したストレージ（記憶領域）を提供します。
 
 ```yaml
 apiVersion: v1
@@ -108,20 +155,44 @@ spec:
           storage: 1Gi
 ```
 
+<!--
 ## Pod Selector
-You must set the `.spec.selector` field of a StatefulSet to match the labels of its `.spec.template.metadata.labels`. Prior to Kubernetes 1.8, the `.spec.selector` field was defaulted when omitted. In 1.8 and later versions, failing to specify a matching Pod Selector will result in a validation error during StatefulSet creation.
+-->
+## ポッド・セレクタ（Pod Selector）{#pod-selector}
 
+<!--
+You must set the `.spec.selector` field of a StatefulSet to match the labels of its `.spec.template.metadata.labels`. Prior to Kubernetes 1.8, the `.spec.selector` field was defaulted when omitted. In 1.8 and later versions, failing to specify a matching Pod Selector will result in a validation error during StatefulSet creation.
+-->
+StatefulSet の `.spec.selector` フィールドは、自身の `.spec.template.metadata.labels` ラベルと一致するように指定が必要です。
+Kubernetes 1.8 未満では、 `.spec.selector` フィールドの省略はデフォルトでした。1.8 以降のバージョンでは、ポッド・セレクタの指定と一致しなければ、StatefulSet 作成時に整合性エラー（validation error）が起こり、作成に失敗します。
+
+<!--
 ## Pod Identity
+-->
+## ポッド同一性（Pod Identity） {#pod-identity}
+
+<!--
 StatefulSet Pods have a unique identity that is comprised of an ordinal, a
 stable network identity, and stable storage. The identity sticks to the Pod,
 regardless of which node it's (re)scheduled on.
+-->
+StatefulSet のポッドはユニークな同一性（unique identity）があります。これを構成するのは順序、安定したネットワーク同一性、安定したストレージです。
+識別子はポッドに張り付いているもので、どのノードに（再）スケジュールされても変わりません。
 
+<!--
 ### Ordinal Index
+-->
+### オリジナルのインデックス（Original Index） {#original-index}
 
+<!--
 For a StatefulSet with N replicas, each Pod in the StatefulSet will be
 assigned an integer ordinal, from 0 up through N-1, that is unique over the Set.
+-->
 
+
+<!--
 ### Stable Network ID
+-->
 
 Each Pod in a StatefulSet derives its hostname from the name of the StatefulSet
 and the ordinal of the Pod. The pattern for the constructed hostname
