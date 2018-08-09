@@ -136,7 +136,7 @@ kubectl create -f  https://k8s.io/examples/controllers/nginx-deployment.yaml
 the created or updated resource. This is useful for future review, such as investigating which
 commands were executed in each Deployment revision.
 -->
-
+でｓ
 {{< note >}}
 **メモ：**  コマンドに `--record` を追加出来ます。これはリソースを作成または更新しても、現在のコマンドをアノテーションに記録します。これは各 Deployment の改訂（リビジョン：）ごと調査用のコマンドを実行するなど、将来的なレビューに役立ちます。
 {{< /note >}}

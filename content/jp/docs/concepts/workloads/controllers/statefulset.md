@@ -182,18 +182,20 @@ StatefulSet のポッドはユニークな同一性（unique identity）があ�
 <!--
 ### Ordinal Index
 -->
-### オリジナルのインデックス（Original Index） {#original-index}
+### オリジナル（原型）インデックス（Original Index） {#original-index}
 
 <!--
 For a StatefulSet with N replicas, each Pod in the StatefulSet will be
 assigned an integer ordinal, from 0 up through N-1, that is unique over the Set.
 -->
-
+StatefulSet に N の複製があるとすると、StatefulSet 内の各ポッドにはオリジナル（原型）としての整数が、0 から N-1 まで割り当てられます。これはセットを超えてユニークです。
 
 <!--
 ### Stable Network ID
 -->
+### 安定したネットワーク ID （Stable Network ID） {#stable-network-id}
 
+<!--
 Each Pod in a StatefulSet derives its hostname from the name of the StatefulSet
 and the ordinal of the Pod. The pattern for the constructed hostname
 is `$(statefulset name)-$(ordinal)`. The example above will create three Pods
@@ -205,21 +207,47 @@ cluster domain.
 As each Pod is created, it gets a matching DNS subdomain, taking the form:
 `$(podname).$(governing service domain)`, where the governing service is defined
 by the `serviceName` field on the StatefulSet.
+-->
+StatefulSet 内の各ポッドに提供するホスト名（hostname）は、StatefulSet の名前からと、ポッドのオリジナル（原型）からです。
+作成されるホスト名のパターンは `$(statefulsetの名前)-$(オリジナル)` です。
+戦術の例では、３つのポッドを作成しました。名前は `web-0、web-1、web-2` です。
+StatefulSet は [ヘッドレス・サービス（Headless Service）](/jp/docs/concepts/services-networking/service/#headless-services) を使ってポッドのドメインを制御します。
+このサービスによって管理されるドメインが取る形式は、 `$(サービス名).$(名前空間).svc.cluster.local` です。
+「cluster.local」はクラスタンおドメインです。
+各ポッドが作成されると、ここには DNS サブドメインに一致する名前をとり、形式は `$(ポッド名).$(管理対象のサービス・ドメイン)` となります。管理対象のサービスとは、StatefulSet の `serviceName` （サービス名）フィールドで定義されていｍさう。
 
+<!--
 Here are some examples of choices for Cluster Domain, Service name,
 StatefulSet name, and how that affects the DNS names for the StatefulSet's Pods.
+-->
+こちらにあるのは、クラスタ・ドメイン、サービス名、StatefulSet 名を選んだ例です。そして、StatefulSet のポッドに対して、DNS 名がどのような影響を与えているかです。
 
+<!--
 Cluster Domain | Service (ns/name) | StatefulSet (ns/name)  | StatefulSet Domain  | Pod DNS | Pod Hostname |
 -------------- | ----------------- | ----------------- | -------------- | ------- | ------------ |
  cluster.local | default/nginx     | default/web       | nginx.default.svc.cluster.local | web-{0..N-1}.nginx.default.svc.cluster.local | web-{0..N-1} |
  cluster.local | foo/nginx         | foo/web           | nginx.foo.svc.cluster.local     | web-{0..N-1}.nginx.foo.svc.cluster.local     | web-{0..N-1} |
  kube.local    | foo/nginx         | foo/web           | nginx.foo.svc.kube.local        | web-{0..N-1}.nginx.foo.svc.kube.local        | web-{0..N-1} |
+-->
 
+クラスタ/ドメイン | サービス (名前空間/名前) | StatefulSet (名前空間/名前)  | StatefulSet ドメイン  | ポッド DNS | ポッド ホスト名 |
+-------------- | ----------------- | ----------------- | -------------- | ------- | ------------ |
+ cluster.local | default/nginx     | default/web       | nginx.default.svc.cluster.local | web-{0..N-1}.nginx.default.svc.cluster.local | web-{0..N-1} |
+ cluster.local | foo/nginx         | foo/web           | nginx.foo.svc.cluster.local     | web-{0..N-1}.nginx.foo.svc.cluster.local     | web-{0..N-1} |
+ kube.local    | foo/nginx         | foo/web           | nginx.foo.svc.kube.local        | web-{0..N-1}.nginx.foo.svc.kube.local        | web-{0..N-1} |
+
+<!--
 Note that Cluster Domain will be set to `cluster.local` unless
 [otherwise configured](/docs/concepts/services-networking/dns-pod-service/#how-it-works).
+-->
+クラスタ・ドメインが [設定されていなければ](/jp/docs/concepts/services-networking/dns-pod-service/#how-it-works)  `cluster.local` に設定されるのでご注意ください。
 
+<!--
 ### Stable Storage
+-->
+### 安定したストレージ（Stable Storage） {#stable-storage}
 
+<!--
 Kubernetes creates one [PersistentVolume](/docs/concepts/storage/persistent-volumes/) for each
 VolumeClaimTemplate. In the nginx example above, each Pod will receive a single PersistentVolume
 with a StorageClass of `my-storage-class` and 1 Gib of provisioned storage. If no StorageClass
@@ -228,75 +256,162 @@ onto a node, its `volumeMounts` mount the PersistentVolumes associated with its
 PersistentVolume Claims. Note that, the PersistentVolumes associated with the
 Pods' PersistentVolume Claims are not deleted when the Pods, or StatefulSet are deleted.
 This must be done manually.
+-->
+Kubernetes は、それぞれの VolumeClaimTemplate （ボリューム要求テンプレート）に対して、１つの [PersistentVolume（持続型ボリューム）](/jp/docs/concepts/storage/persistent-volumes/) を割り当てます。
+先述の nginx の例では、各ポッドは１つの PersistentVolume に `my-storage-class` の StorageClass（ストレージ・クラス）を与えられ、1Gib の容量が供給されます。
+もし StorageClass を指定しなければ、デフォルトの StorageClass が使われます。
+ポッドがノード内に（再）スケジュールされた時、 `volumeMounts` は PersistentVolume Claim（持続ボリューム要求）に関連付けられた PersistentVolume（持続ボリューム）をマウントします。
+注意するのは、PersistentVolume（持続ボリューム）が関連付けられているのはポットに対する PersistentVolume Claim（持続ボリューム要求）であり、これはポッドや StatefulSet が削除されても削除されません。
+削除をするには手動で行う必要があります。
 
+<!--
 ### Pod Name Label
+-->
+### ポッド名ラベル（Pod Name Label）{#pod-name-label}
 
+<!--
 When the StatefulSet controller creates a Pod, it adds a label, `statefulset.kubernetes.io/pod-name`, 
 that is set to the name of the Pod. This label allows you to attach a Service to a specific Pod in 
 the StatefulSet.
+-->
+StatefulSet コントローラがポッドを作成すると、 `statefulset.kubernetes.io/pod-name` ラベルを追加します。
+これはポッドの名前を追加します。
+このラベルによって、StatefulSet が特定のポッドに対してサービス割り当て（アタッチする）可能になります。
 
+<!--
 ## Deployment and Scaling Guarantees
+-->
+## デプロイメントとスケーリング保証 {#deployment-and-scaling-guarantees
 
+<!--
 * For a StatefulSet with N replicas, when Pods are being deployed, they are created sequentially, in order from {0..N-1}.
 * When Pods are being deleted, they are terminated in reverse order, from {N-1..0}.
 * Before a scaling operation is applied to a Pod, all of its predecessors must be Running and Ready.
 * Before a Pod is terminated, all of its successors must be completely shutdown.
+-->
+* StatefulSet に N 複製（レプリカ）があり、ポッドがデプロイされると、 {0..N-1} まで順番に連続して作成される
+* ポッドの削除が始まると、削除は逆順 {N-1..0} で削除される
+* スケーリング作業がポッドに適用される前に、全ての先行作業（predecessor）が実行され、準備が整っている必要がある
+* ポッドが削除される前に、その後継者（successor）が完全にシャットダウンしている必要がある
 
+<!--
 The StatefulSet should not specify a `pod.Spec.TerminationGracePeriodSeconds` of 0. This practice is unsafe and strongly discouraged. For further explanation, please refer to [force deleting StatefulSet Pods](/docs/tasks/run-application/force-delete-stateful-set-pod/).
+-->
+StetefulSet では `pod.Spec.TerminationGracePeriodSeconds` を 0 に指定すべきではありません。
+この実行は安全ではなく、とても思い留めるべきです。
+詳しい説明については  [StatefulSet ポッドの強制削除](/jp/docs/tasks/run-application/force-delete-stateful-set-pod/) を参照ください。
 
+<!--
 When the nginx example above is created, three Pods will be deployed in the order
 web-0, web-1, web-2. web-1 will not be deployed before web-0 is
 [Running and Ready](/docs/user-guide/pod-states/), and web-2 will not be deployed until
 web-1 is Running and Ready. If web-0 should fail, after web-1 is Running and Ready, but before
 web-2 is launched, web-2 will not be launched until web-0 is successfully relaunched and
 becomes Running and Ready.
+-->
+先ほど作成した nginx の例では、３つのポッドが web-0、web-1、web-2 の順番で展開（デプロイ）されます。
+web-1 は web-0 が [実行中かつ待機](/jp/docs/user-guide/pod-states/) にならないと展開しまｓねんし、web-2 は web1 が実行中かつ待機にならないと展開しません。
+もし、web-0 の展開に失敗し、後の web-1 が実行中かつ待機になったとしても、web-2 が起動していなければ、web-0 の起動が完了しない限り web-2 は実行中かつ待機にはなりません。
 
+<!--
 If a user were to scale the deployed example by patching the StatefulSet such that
 `replicas=1`, web-2 would be terminated first. web-1 would not be terminated until web-2
 is fully shutdown and deleted. If web-0 were to fail after web-2 has been terminated and
 is completely shutdown, but prior to web-1's termination, web-1 would not be terminated
 until web-0 is Running and Ready.
+ｰｰ>
+もしもユーザが StatefulSet にパッチをあてて（追加で）デプロイするような場合、 `repicas=1` であれば、 web-2 がまずはじめに削除されます。
+web-2 が完全にシャットダウンして削除されるまで、web-1 は停止（terminate）されません。
+もしも web-2 が削除されて完全にシャットダウンされたあとに web-0 で障害が起こると、web-1 の削除よりも優先されます。web-1 は web-0 が実行・待機中となるまで削除されません。
 
+<!--
 ### Pod Management Policies
+-->
+### ポッド管理（Pod Managemement）方針 {#pod-management-policies}
+
+<!--
 In Kubernetes 1.7 and later, StatefulSet allows you to relax its ordering guarantees while
 preserving its uniqueness and identity guarantees via its `.spec.podManagementPolicy` field.
+-->
+Kubernetes 1.7 以降では、StatefulSet はユニーク性と同一性の保証が `.spec.podManagementPolicy` フィールドの指定によって、確実な順序づけ（ordering）を緩和できるようになりました。
 
+<!--
 #### OrderedReady Pod Management
+-->
+#### OrderedReady ポッド管理 {#orderedready-pod-management}
 
+<!--
 `OrderedReady` pod management is the default for StatefulSets. It implements the behavior
 described [above](#deployment-and-scaling-guarantees).
+-->
+`OrderedReady` ポッド管理とは StatefulSet のためのデフォルトです。
+挙動の実装については [前述]](#deployment-and-scaling-guarantees) の通りに説明があります。
 
+<!--
 #### Parallel Pod Management
+--->
+#### Parallel（並列）ポッド管理 {#parallel-pod-management}
 
+<!--
 `Parallel` pod management tells the StatefulSet controller to launch or
 terminate all Pods in parallel, and to not wait for Pods to become Running
 and Ready or completely terminated prior to launching or terminating another
 Pod.
+-->
+`Parallel` （並列）ポッド管理は、StatefulSet コントローラに対して、ポッドの起動と停止を並列に行うように伝えます。また、他のポッドの起動や停止に対する優先度に拘わらず、完全な完了を待たずに、ポッドの起動や削除を行います。
 
+<!--
 ## Update Strategies
+-->
+## 更新ストラテジ（Update Strategies） {#update-strategies}
 
+<!--
 In Kubernetes 1.7 and later, StatefulSet's `.spec.updateStrategy` field allows you to configure
 and disable automated rolling updates for containers, labels, resource request/limits, and
 annotations for the Pods in a StatefulSet.
+-->
+Kubernetes 1.7 以降では、 StatefulSet の `.spec.updateStrategy`  フィールドによって、コントローラ、ラベル、リソース要求・制限、StatefulSet 内のポッドに対する自動化に関して、自動的なローリング・アップデート（逐次更新）の調整や無効化が行えます。
 
+<!--
 ### On Delete
+-->
+### On Delete（削除した状態で）{#on-delete}
 
+<!--
 The `OnDelete` update strategy implements the legacy (1.6 and prior) behavior. When a StatefulSet's
 `.spec.updateStrategy.type` is set to `OnDelete`, the StatefulSet controller will not automatically
 update the Pods in a StatefulSet. Users must manually delete Pods to cause the controller to
 create new Pods that reflect modifications made to a StatefulSet's `.spec.template`.
+-->
+`OnDelete` 更新ストラテジの実装は、過去（1.6 以前）の挙動です。
+StatefulSet の `.spec.updateStrategy.type` を `OnDelete` に指定すると、StatefulSet コントローラは StatefulSet 内のポッドを自動的に更新しません。
+コントローラが新しいポッドを削除できるようにするには、ユーザはポッドを手動で削除する必要があります。StatefulSet の `.spec.template` によって設定が反映されます。
 
+<!--
 ### Rolling Updates
+-->
+### Rolling Updates（逐次更新） {#rolling-updates}
 
+<!--
 The `RollingUpdate` update strategy implements automated, rolling update for the Pods in a
 StatefulSet. It is the default strategy when `.spec.updateStrategy` is left unspecified. When a StatefulSet's `.spec.updateStrategy.type` is set to `RollingUpdate`, the
 StatefulSet controller will delete and recreate each Pod in the StatefulSet. It will proceed
 in the same order as Pod termination (from the largest ordinal to the smallest), updating
 each Pod one at a time. It will wait until an updated Pod is Running and Ready prior to
 updating its predecessor.
+-->
+`RollingUpdate` 更新ストラテジの実装は、StatefulSet 内のポッドに対して自動的なローリング・アップデート（逐次更新）をもたらします。
+これは `.spec.updateStrategy`  を未定義な場合のデフォルトのストラテジです。
+StatefulSet の `.spec.updateStrategy.type` を `RollingUpdate` にすると、StatefulSet コントローラは StatefulSet 内のポッドを削除および再作成します。
+処理の進行はポッドを削除する順番と同じであり、各ポッドを同時に削除する場合と同じです（最も大きなオリジナルから小さなものへ）。
+ポッドの更新に先立って、ポッドが実行中かつ待機になるまで待機します。
 
+<!--
 #### Partitions
+-->
+#### パーティション {#partitions}
 
+<!--
 The `RollingUpdate` update strategy can be partitioned, by specifying a
 `.spec.updateStrategy.rollingUpdate.partition`. If a partition is specified, all Pods with an
 ordinal that is greater than or equal to the partition will be updated when the StatefulSet's
@@ -306,6 +421,13 @@ StatefulSet's `.spec.updateStrategy.rollingUpdate.partition` is greater than its
 updates to its `.spec.template` will not be propagated to its Pods.
 In most cases you will not need to use a partition, but they are useful if you want to stage an
 update, roll out a canary, or perform a phased roll out.
+-->
+`RollingUpdate` 更新ストラテジでは `.spec.updateStrategy.rollingUpdate.partition` の指定によって分割して行えます。
+パーティションが指定されると、全てのポッドが順序づけされ、 StatefulSet の `.spec.template` が更新されると、パーティションと一致するか大きいものが更新されます。
+順序付けられたポッドが、パーティションよりも小さければ更新されませんし、削除されたとしても、以前のバージョンのものを再作成します。
+ほとんどの場合、パーティションを使う必要はありません。
+しかし、ステージごとの更新や、カナリア方式のロールアウトや、段階的なロールアウトを処理するには役立つでしょう。
+
 
 {{% /capture %}}
 {{% capture whatsnext %}}

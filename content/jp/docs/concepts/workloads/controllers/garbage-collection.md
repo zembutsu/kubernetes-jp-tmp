@@ -6,35 +6,52 @@ weight: 60
 
 {{% capture overview %}}
 
+<!ｰｰ
 The role of the Kubernetes garbage collector is to delete certain objects
 that once had an owner, but no longer have an owner.
+-->
+Kubernetes ガベージ・コレクタ（garbage collector）の役割は、かつては所有者がいたものの、現在は所有者がいないオブジェクトの削除です。
 
+<!--
 **Note**: Garbage collection is a beta feature and is enabled by default in
 Kubernetes version 1.4 and later.
+ｰｰ>
+**メモ：** ガベージ・コレクションはベータ機能であり、デフォルトで有効なのは Kubernetes 1.4 以降です。
 
 {{% /capture %}}
 
 
 {{% capture body %}}
 
+<!--
 ## Owners and dependents
+-->
+## 所有者と従属（#owners-and-dependents）
 
+<!--
 Some Kubernetes objects are owners of other objects. For example, a ReplicaSet
 is the owner of a set of Pods. The owned objects are called *dependents* of the
 owner object. Every dependent object has a `metadata.ownerReferences` field that
 points to the owning object.
+-->
 
+<!--
 Sometimes, Kubernetes sets the value of `ownerReference` automatically. For
 example, when you create a ReplicaSet, Kubernetes automatically sets the
 `ownerReference` field of each Pod in the ReplicaSet. In 1.8, Kubernetes
 automatically sets the value of `ownerReference` for objects created or adopted
 by ReplicationController, ReplicaSet, StatefulSet, DaemonSet, Deployment, Job
 and CronJob.
+-->
 
+<!--
 You can also specify relationships between owners and dependents by manually
 setting the `ownerReference` field.
+-->
 
+<!--
 Here's a configuration file for a ReplicaSet that has three Pods:
+-->
 
 {{< codenew file="controllers/replicaset.yaml" >}}
 
