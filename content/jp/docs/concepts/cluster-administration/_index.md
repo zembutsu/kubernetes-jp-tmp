@@ -1,5 +1,5 @@
 ---
-title: "Compute, Storage, and Networking Extensions"
+title: "計算、ストレージ、ネットワーク構成拡張"
 weight: 30
 ---
 

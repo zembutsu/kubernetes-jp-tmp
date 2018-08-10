@@ -2,7 +2,7 @@
 reviewers:
 - davidopp
 - lavalamp
-title: Cluster Administration Overview
+title: クラスタ管理概要
 content_template: templates/concept
 weight: 10
 ---
