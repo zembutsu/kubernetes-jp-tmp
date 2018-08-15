@@ -3,14 +3,21 @@ reviewers:
 - bgrant0607
 - janetkuo
 - mikedanese
-title: Managing Resources
+title: リソース管理
 content_template: templates/concept
 weight: 40
 ---
 
 {{% capture overview %}}
 
+<!--
 You've deployed your application and exposed it via a service. Now what? Kubernetes provides a number of tools to help you manage your application deployment, including scaling and updating. Among the features that we will discuss in more depth are [configuration files](/docs/concepts/configuration/overview/) and [labels](/docs/concepts/overview/working-with-objects/labels/).
+-->
+アプリケーションを展開（デプロイ）したら、サービスを経由して外に対する公開ができます。
+そのためには、何をどうしたらよいのでしょうか？
+Kubernetes が提供するのは、アプリケーションの展開に役立つツールであり、スケーリングと更新も含みませす。
+共通している機能に関しては、[設定情報ファイル](/jp/docs/concepts/configuration/overview/) と [ラベル](/jp/docs/concepts/overview/working-with-objects/labels/) で更に深く扱っています。
+
 
 {{% /capture %}}
 
@@ -18,13 +25,24 @@ You've deployed your application and exposed it via a service. Now what? Kuberne
 
 {{% capture body %}}
 
+<!--
 ## Organizing resource configurations
+-->
+## リソース設定情報の組織化 {#organizing-resource-configurations}
 
+<!--
 Many applications require multiple resources to be created, such as a Deployment and a Service. Management of multiple resources can be simplified by grouping them together in the same file (separated by `---` in YAML). For example:
+-->
+多くのアプリケーションは、デプロイメントやサービスといった、複数のリソース作成を必要とします。
+複数のリソース管理は、同じファイルで（ YAML の `---` で分離 ）一緒にグループ化することで、単純化できます。
+こちらは例です：
 
 {{< code file="nginx-app.yaml" >}}
 
+<!--
 Multiple resources can be created the same way as a single resource:
+-->
+複数のリソースを作成するには、１つのリソース作成と同様に作成できます。
 
 ```shell
 $ kubectl create -f https://k8s.io/docs/concepts/cluster-administration/nginx-app.yaml
@@ -32,32 +50,57 @@ service "my-nginx-svc" created
 deployment "my-nginx" created
 ```
 
+<!--
 The resources will be created in the order they appear in the file. Therefore, it's best to specify the service first, since that will ensure the scheduler can spread the pods associated with the service as they are created by the controller(s), such as Deployment.
+-->
+リソースはファイルに記述された順番で作成されます。
+そのため、最初にサービスを指定するのがベストです。
+そうしておけば、スケジューラはポッドに関連付けられたサービスを展開できるようになります。このサービスとはデプロイメントのようなコントローラによって作成されるものも含みます。
 
+<!--
 `kubectl create` also accepts multiple `-f` arguments:
+-->
+また、 `kubectl create` は複数の `-f` 引数を受け付けられます。
 
 ```shell
 $ kubectl create -f https://k8s.io/docs/concepts/cluster-administration/nginx/nginx-svc.yaml -f https://k8s.io/docs/concepts/cluster-administration/nginx/nginx-deployment.yaml
 ```
 
+<!--
 And a directory can be specified rather than or in addition to individual files:
+-->
+そして、ここのファイルを追加する代わりに、ディレクトリも指定できます。
 
 ```shell
 $ kubectl create -f https://k8s.io/docs/concepts/cluster-administration/nginx/
 ```
 
+<!--
 `kubectl` will read any files with suffixes `.yaml`, `.yml`, or `.json`.
+-->
+`kubectl` は末尾が `.yaml` や `.yml` や `.json` のあらゆるファイルを読み込めます。
 
+<!--
 It is a recommended practice to put resources related to the same microservice or application tier into the same file, and to group all of the files associated with your application in the same directory. If the tiers of your application bind to each other using DNS, then you can then simply deploy all of the components of your stack en masse.
+-->
+実践において推奨するのは、同じマイクロサービスやアプリケーションに関連するリソースを同じファイルにおき、アプリケーションに関連するファイルのグループを同じディレクトリ内に置くことです。
+アプリケーション層がお互いに DNS を使って結びついている場合は、全てのコンポーネントのスタックを一緒にして、シンプルに展開（デプロイ）できます。
 
+<!--
 A URL can also be specified as a configuration source, which is handy for deploying directly from configuration files checked into github:
+-->
+また、URL で設定情報のソース（元）として指定できます。URL は GitHub でチェックした設定情報ファイルを、直接デプロイするのに手軽です。
 
 ```shell
 $ kubectl create -f https://raw.githubusercontent.com/kubernetes/website/master/docs/concepts/cluster-administration/nginx-deployment.yaml
 deployment "nginx-deployment" created
 ```
 
+<!--
 ## Bulk operations in kubectl
+-->
+## kubectl で大量の操作 {#bulk-operations-in-kubectl}
+
 
 Resource creation isn't the only operation that `kubectl` can perform in bulk. It can also extract resource names from configuration files in order to perform other operations, in particular to delete the same resources you created:
 
