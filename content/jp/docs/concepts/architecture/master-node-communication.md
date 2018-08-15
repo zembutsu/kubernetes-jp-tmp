@@ -3,18 +3,23 @@ reviewers:
 - dchen1107
 - roberthbailey
 - liggitt
-title: Master-Node communication
+title: マスタとノード間の通信
 content_template: templates/concept
 weight: 20
 ---
 
 {{% capture overview %}}
 
+<!--
 This document catalogs the communication paths between the master (really the
 apiserver) and the Kubernetes cluster. The intent is to allow users to
 customize their installation to harden the network configuration such that
 the cluster can be run on an untrusted network (or on fully public IPs on a
 cloud provider).
+-->
+このドキュメントはマスタ（正確には apiserver）と Kubernetes クラスタ間との通信パスを列挙します。
+目的は、ユーザがネットワーク設定を確固たるものとするため、インストールをカスタマイズするためです。
+これには信頼できないネットワーク上でのクラスタ実行も含みます（あるいはクラウド事業者上の完全なパブリック IP 上でも含みます）。
 
 {{% /capture %}}
 
@@ -22,8 +27,12 @@ cloud provider).
 
 {{% capture body %}}
 
+<!--
 ## Cluster -> Master
+-->
+## クラスタ -> マスタ {#cluster-master}
 
+<!--
 All communication paths from the cluster to the master terminate at the
 apiserver (none of the other master components are designed to expose remote
 services). In a typical deployment, the apiserver is configured to listen for
@@ -33,28 +42,55 @@ of [authorization](/docs/admin/authorization/) should be enabled, especially
 if [anonymous requests](/docs/admin/authentication/#anonymous-requests) or
 [service account tokens](/docs/admin/authentication/#service-account-tokens)
 are allowed.
+-->
+クラスタからマスタへの全ての通信径路（パス）は、apiserver が終点です（他のマスタ構成要素は、どれ１つとしてリモート・サービスを外に向けて公開するように設計されていません）。
+典型的な展開（デプロイメント）では、apiserver は安全な HTTPS ポート (443) 上でリモート接続をリッスン（listen）し、１つまたは複数のクライアント [認証](/jp/docs/admin/authentication/) 形式を有効化するよう設定されています。
+１つまたは複数の [認証](/jp/docs/admin/authentication/) 形式は有効化すべきです。
+特に [匿名要求（anonymous requests）](/jp/docs/admin/authentication/#anonymous-requests) と
+[サービス・アカウント・トークン（service account tokens）](/jp/docs/admin/authentication/#service-account-tokens) です。
 
+<!--
 Nodes should be provisioned with the public root certificate for the cluster
 such that they can connect securely to the apiserver along with valid client
 credentials. For example, on a default GCE deployment, the client credentials
 provided to the kubelet are in the form of a client certificate. See
 [kubelet TLS bootstrapping](/docs/reference/command-line-tools-reference/kubelet-tls-bootstrapping/)
 for automated provisioning of kubelet client certificates.
+-->
+有効なクライアント信用証明書（credential）を持っている apiserver に対して、ノードが安全に接続できるようにするには、
+ノードは公開ルート証明書（certificate）と一緒にして、クラスタへ自動構築（プロビジョン）すべきです。
+たとえば、デフォルトの GCE での展開（デプロイ）では、kubelet に提供するクライアントの信用証明書（credential）は、クライアント証明書（certficate）の形式です。
+Kubelet クライアント証明書を自動的に設定（プロビジョニング）するには、[kubelet TLS ブートストラッピング](/jp/docs/reference/command-line-tools-reference/kubelet-tls-bootstrapping/) をご覧ください。
 
+<!--
 Pods that wish to connect to the apiserver can do so securely by leveraging a
 service account so that Kubernetes will automatically inject the public root
 certificate and a valid bearer token into the pod when it is instantiated.
 The `kubernetes` service (in all namespaces) is configured with a virtual IP
 address that is redirected (via kube-proxy) to the HTTPS endpoint on the
 apiserver.
+-->
+apiserver に接続したいポッドは、サービス・アカウントの活用によって、より安全に接続できるようになります。
+そのためには、ポッドの初期化時、Kubernetes は公開ルート証明書と有効なベアラ－（bearer：運搬）トークンを自動的にポッドに対して投入します。
+（全ての名前空間内に存在する）`kubernetes` サービスは、仮想 IP アドレスと一緒に設定されます。
+IP アドレスは apiserver 上の HTTPS エンドポイントに対してリダイレクトするためです（kube-proxy を経由）。
 
+<!--
 The master components also communicate with the cluster apiserver over the secure port.
+-->
+また、マスタ構成要素（コンポーネント）も安全なポートを通してクラスタ apiserver と通信できます。
 
+<!--
 As a result, the default operating mode for connections from the cluster
 (nodes and pods running on the nodes) to the master is secured by default
 and can run over untrusted and/or public networks.
+-->
+結果として、クラスタ（ノードおよびポッドを実行中のノード）からマスタに対する通信のデフォルト操作モードが、デフォルトで安全です。そして、信頼されない、または、パブリック・ネットワークを越えた処理も可能です。
 
+<!--
 ## Master -> Cluster
+-->
+## クラスタ -> マスタ {#master-cluster}
 
 There are two primary communication paths from the master (apiserver) to the
 cluster. The first is from the apiserver to the kubelet process which runs on

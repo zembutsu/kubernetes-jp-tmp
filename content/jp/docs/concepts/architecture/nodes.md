@@ -337,10 +337,12 @@ there is only one availability zone (the whole cluster).
 -->
 ノード退避の挙動が変わるのは、ノードが稼働している availability ゾーンが異常（unhealthy）になった時です。
 ノード・コントローラはゾーン内の何パーセントのノードが同時に異常（NodeReady 状態が ConditionUnknown もしくは ConditionFalse）になっているかどうかを調べます。
-もし、異常ノードがごく少量のノードで、`--unhealthy-zone-threshold` (デフォルト 0.55)  以下であれば、退避レートを減少します。たとえば、クラスタが小さければ（例：　 - デフォルトは 50 ） 退避は停止します。
-そうでなければ、退避レートは
+もし、異常ノードがごく少量のノードで、`--unhealthy-zone-threshold` (デフォルト 0.55)  以下であれば、退避レートを減少します。たとえば、クラスタが小さければ（例：`--large-cluster-size-threshold` で指定した値よりもノードが等しいか少なくなるように。デフォルトは 50 ） 退避は停止します。
+そうでなければ、退避レートは１秒ごとに `--secondary-node-eviction-rate` ずつ（デフォルトは 0.01）減少します。
+これらの方針（ポリシー）をアベイラビリティ・ゾーンごとに実装されているのは、１つのアベイラビリティ・ゾーンが他と通信中にもかかわらずマスタから切り離されてしまう可能性があるためです。
+もしクラスタがクラウド事業者にある複数のアベイラビリティ・ゾーンを横断しないのであれば、アベイラビリティ・ゾーン（クラスタ全体）は１つしかないことになります。
 
-
+<!--
 A key reason for spreading your nodes across availability zones is so that the
 workload can be shifted to healthy zones when one entire zone goes down.
 Therefore, if all nodes in a zone are unhealthy then node controller evicts at
@@ -348,24 +350,49 @@ the normal rate `--node-eviction-rate`.  The corner case is when all zones are
 completely unhealthy (i.e. there are no healthy nodes in the cluster). In such
 case, the node controller assumes that there's some problem with master
 connectivity and stops all evictions until some connectivity is restored.
+-->
+アベイラビリティ・ゾーンを横断してノードが拡散する主な理由は、あるノード全体で障害が発生（ダウン）した時、正常なゾーンにワークロードが移行するためです。
+そのため、ゾーン内の全てのノードが異常（unhealthy）になれば、通常はレート（比率）が `--node-eviction-rate` を越えると、ノード・コントローラは退避します。
+このような場合、ノード・コントローラはマスタとの疎通に何らかの問題が発生したと見なし、どこかとの接続性が回復するまで、全ての退避は停止したままにします。
 
+<!--
 Starting in Kubernetes 1.6, the NodeController is also responsible for evicting
 pods that are running on nodes with `NoExecute` taints, when the pods do not tolerate
 the taints. Additionally, as an alpha feature that is disabled by default, the
 NodeController is responsible for adding taints corresponding to node problems like
 node unreachable or not ready. See [this documentation](/docs/concepts/configuration/taint-and-toleration/)
 for details about `NoExecute` taints and the alpha feature.
+-->
+Kubernetes 1.6 以降、NodeController もポッドの退避に責任を持つようになりました。
+ポッドが汚染（taint）に対する耐性（tolerate）がなければ、 `NoExecute` （実行でいない）テイントを持つノード上で実行しているポッドを NodeController が退避します。
+なお、これはアルファ機能のため、デフォルトでは無効化されています。
+NodeController が責任を持つのは、ノードに到達できない場合や準備ができていないなどノードの問題に対して、適切に汚染（taint）を追加することです。
 
+<!--
 Starting in version 1.8, the node controller can be made responsible for creating taints that represent
 Node conditions. This is an alpha feature of version 1.8.
+-->
+バージョン 1.8 からは、ノード・コントローラはノード状態を表すテイント（taint）の作成に責任を持つことになりました。
+これはバージョン 1.8 のアルファ機能です。
 
+<!--
 ### Self-Registration of Nodes
+-->
+### ノードの自己登録 {#self-registration-of-nodes}
 
+<!--
 When the kubelet flag `--register-node` is true (the default), the kubelet will attempt to
 register itself with the API server.  This is the preferred pattern, used by most distros.
+-->
+kubelet のフラグ `--register-node` が true であれば（デフォルトです）、kubelet は自分自身を API サーバへの登録を試みます。
+これが望ましい形態（パターン）であり、多くのディストリビューションで使われています。
 
+<!--
 For self-registration, the kubelet is started with the following options:
+-->
+自分で登録する（self-registration）には、以下のオプションで kubelet を起動します。
 
+<!--
   - `--kubeconfig` - Path to credentials to authenticate itself to the apiserver.
   - `--cloud-provider` - How to talk to a cloud provider to read metadata about itself.
   - `--register-node` - Automatically register with the API server.
@@ -373,50 +400,107 @@ For self-registration, the kubelet is started with the following options:
   - `--node-ip` - IP address of the node.
   - `--node-labels` - Labels to add when registering the node in the cluster.
   - `--node-status-update-frequency` - Specifies how often kubelet posts node status to master.
+-->
+  - `--kubeconfig` - apiserver に自分自身を登録するために使う信用証明（credential）のパス。
+  - `--cloud-provider` - クラウド事業者と通信するために使う、自分自身に関するメタデータ。
+  - `--register-node` - API サーバの自動的に登録。
+  - `--register-with-taints` - ノードを指定したテイント（taint）の一覧に基づき登録（カンマ区切りの `<キー>=<値>:<効果>`）。もし `register-node` が false であれば何も行いません。
+  - `--node-ip` - ノードの IP アドレス。
+  - `--node-labels` - クラスタにノードを登録するときのラベルを追加。
+  - `--node-status-update-frequency` - kubelet がノードのステータスを master に何回ポストするかを指定
 
+<!--
 Currently, any kubelet is authorized to create/modify any node resource, but in practice it only creates/modifies
 its own. (In the future, we plan to only allow a kubelet to modify its own node resource.)
+-->
+現在の所、どのようなノード・リソースに対しても kubelet は作成・変更する権限を持っています。
+しかし、現実的に破作成・変更は自分自身に留めます（将来的には、kubelet は自分自身のノード・リソースのみ変更できるようにするのを計画しています）。
 
+<!--
 #### Manual Node Administration
+-->
+#### 手動のノード管理 {#manual-node-administration}
 
+<!--
 A cluster administrator can create and modify node objects.
+-->
+クラスタの管理者はノード・オブジェクトの作成と変更を行えます。
 
+<!--
 If the administrator wishes to create node objects manually, set the kubelet flag
 `--register-node=false`.
+-->
+管理者がノード・オブジェクトを手動で作りたい場合は、kubelet にフラグ `--register-node=false`  を指定します。
 
+<!--
 The administrator can modify node resources (regardless of the setting of `--register-node`).
 Modifications include setting labels on the node and marking it unschedulable.
+-->
+管理者はノード・リソースの変更が可能です（ `--register-node` の設定を無視します）。
 
+<!--
 Labels on nodes can be used in conjunction with node selectors on pods to control scheduling,
 e.g. to constrain a pod to only be eligible to run on a subset of the nodes.
+-->
+ノード上のラベルは、ポッド上のノード・セレクタとスケジューリング管理を連結（結び付ける）ために使います。
+例えば、適切なノードのサブセット上でのみ実行するポッドを制限する場合です。
 
+<!--
 Marking a node as unschedulable will prevent new pods from being scheduled to that
 node, but will not affect any existing pods on the node. This is useful as a
 preparatory step before a node reboot, etc. For example, to mark a node
 unschedulable, run this command:
+-->
+スケジュール不可能（unschedulable）とマーク（印付け）されたノードには、新しいポッドがスケジュールされるのを阻止します。
+ですが、これはノードが対象であり、ノード上にある既存のポッドに対しては何ら影響はありません。
+これはノードの再起動など、事前の準備段階に使うのが便利です。
+たとえば、ノードをスケジュール不可能と印を付けるには、次のコマンドを実行します。
 
 ```shell
 kubectl cordon $NODENAME
 ```
 
+<!--
 Note that pods which are created by a DaemonSet controller bypass the Kubernetes scheduler,
 and do not respect the unschedulable attribute on a node.  The assumption is that daemons belong on
 the machine even if it is being drained of applications in preparation for a reboot.
+-->
+DaemonSet コントローラが Kubernetes スケジューラをバイパスして作成されたポッドは、ノードのスケジュール不可能な属性を一切考慮しません。
+これは、デーモンが対象マシン上に存在していると仮定しているためで、たとえ再起動の準備のためにアプリケーションのドレイン（排出）を行っているとしてもです。
 
+<!--
 ### Node capacity
+-->
+### ノードの収容能力（キャパシティ） {#node-capacity}
 
+<!--
 The capacity of the node (number of cpus and amount of memory) is part of the node object.
 Normally, nodes register themselves and report their capacity when creating the node object. If
 you are doing [manual node administration](#manual-node-administration), then you need to set node
 capacity when adding a node.
+-->
+ノードの許容能力（CPU 数、メモリ容量）とはノード・オブジェクトの一部です。
+通常、ノード・オブジェクトの作成時、ノードは自分自身を登録し、自身の許容能力（キャパシティ）を報告します。
+もしも [ノードの手動管理](#manual-node-administration) を考えている場合は、ノードの追加時にノード許容容量を設定する必要があります。
 
+<!--
 The Kubernetes scheduler ensures that there are enough resources for all the pods on a node.  It
 checks that the sum of the requests of containers on the node is no greater than the node capacity.  It
 includes all containers started by the kubelet, but not containers started directly by Docker nor
 processes not in containers.
+-->
+Kubernetes スケジューラは、ノード上の全てのポッドに対して十分なリソースがあるのを確保します。
+スケジューラはノード上にあるコンテナの要求を合計し、ノードの許容容量（キャパシティ）を越えないようにチェックします。
+これには kubelet によって作成された全てのコンテナを含みます。
+しかし、Docker が直接開始したコンテナや、コンテナ内に入っていないプロセスは含みません。
 
+<!--
 If you want to explicitly reserve resources for non-pod processes, you can create a placeholder
 pod. Use the following template:
+-->
+ポッド以外のプロセスに対しても、明示的にリソースを予約したい場合は、 代替ポッド（placeholder pod）を作成できます。 
+以下のテンプレートをお使いください。
+
 
 ```yaml
 apiVersion: v1
@@ -433,15 +517,27 @@ spec:
         memory: 100Mi
 ```
 
+<!--
 Set the `cpu` and `memory` values to the amount of resources you want to reserve.
 Place the file in the manifest directory (`--config=DIR` flag of kubelet).  Do this
 on each kubelet where you want to reserve resources.
+-->
+予約したいリソース量の `cpu` と `memory` を設定します。
+マニフェスト・ディレクトリ内（ kubelet の `--config=DIR` フラグ）にこのファイルを置きます。
+この作業を、リソースを予約したい各 kubelet 上で行います。
 
-
+<!--
 ## API Object
+-->
+## API オブジェクト {#api-object}
 
+<!--
 Node is a top-level resource in the Kubernetes REST API. More details about the
 API object can be found at:
 [Node API object](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/#node-v1-core).
+-->
+ノードは Kubernetes REST API の中でトップ・レベルのリソースです。
+API オブジェクトの詳細については、 [Node API object](/jp/docs/reference/generated/kubernetes-api/{{< param "version" >}}/#node-v1-core) にあります。
+
 
 {{% /capture %}}
