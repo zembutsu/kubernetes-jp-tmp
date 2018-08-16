@@ -90,39 +90,70 @@ and can run over untrusted and/or public networks.
 <!--
 ## Master -> Cluster
 -->
-## クラスタ -> マスタ {#master-cluster}
+## マスタ -> クラスタ {#master-cluster}
 
+<!--
 There are two primary communication paths from the master (apiserver) to the
 cluster. The first is from the apiserver to the kubelet process which runs on
 each node in the cluster. The second is from the apiserver to any node, pod,
 or service through the apiserver's proxy functionality.
+-->
+マスタ（apiserver）からクラスタに対する通信経路は主に２つあります。
+１つめは、apiserver からクラスタ内の各ノード上で実行している kubelet プロセスに対してです。
+２つめは、apiserver から、apiserver のプロキシ機能を通して、あらゆるノード、ポッド、サービスに対してです。
 
 ### apiserver -> kubelet
 
+<!--
 The connections from the apiserver to the kubelet are used for:
+-->
+apiserver から kubelet への接続は、以下のために使います：
 
+<!--
   * Fetching logs for pods.
   * Attaching (through kubectl) to running pods.
   * Providing the kubelet's port-forwarding functionality. 
+-->
+  * ポッド用のログを取得する
+  * 実行中のポッドに対して（kubectl を通して）アタッチする
+  * kubelet のポート転送機能を提供する
 
+<!--
 These connections terminate at the kubelet's HTTPS endpoint. By default, 
 the apiserver does not verify the kubelet's serving certificate,
 which makes the connection subject to man-in-the-middle attacks, and
 **unsafe** to run over untrusted and/or public networks.
+-->
+通信は kubelet の HTTPS エンドポイントに到達します。
+デフォルトでは apiserver は kubelet の提供する証明書（certificate）を確認しないため、接続対象の中間者攻撃や、信頼できないパブリックなネットワークでの実行は **安全ではありません** 。
 
+<!--
 To verify this connection, use the `--kubelet-certificate-authority` flag to
 provide the apiserver with a root certificate bundle to use to verify the
 kubelet's serving certificate.
+-->
+接続を検証するには apiserver に `--kubelet-certificate-authority` フラグを使い、kubelet が提供する証明書を確認するために、ルート証明書の束をを apiserver が提供するようにします。
 
+<!--
 If that is not possible, use [SSH tunneling](/docs/concepts/architecture/master-node-communication/#ssh-tunnels)
 between the apiserver and kubelet if required to avoid connecting over an
 untrusted or public network.
+-->
+これが不可能でも、信頼できないまたはパブリックなネットワークを越えての通信を避ける必要がある場合は、apiserver と kubelet 間で[SSH トンネリング](/jp/docs/concepts/architecture/master-node-communication/#ssh-tunnels) を使います。
 
+<!--
 Finally, [Kubelet authentication and/or authorization](/docs/admin/kubelet-authentication-authorization/)
 should be enabled to secure the kubelet API.
+-->
+最終的には、 kubelet API を安全にするためには、 [Kubelet authentication（認証）および authorization（許可）](/jp/docs/admin/kubelet-authentication-authorization/) を使うべきでしょう。
 
+
+<!--
 ### apiserver -> nodes, pods, and services
+-->
+### apiserer -> ノード、ポッド、サービス {#apiserver-nodes-pods-and-services}
 
+<!--
 The connections from the apiserver to a node, pod, or service default to plain
 HTTP connections and are therefore neither authenticated nor encrypted. They
 can be run over a secure HTTPS connection by prefixing `https:` to the node,
@@ -131,5 +162,11 @@ provided by the HTTPS endpoint nor provide client credentials so while the
 connection will be encrypted, it will not provide any guarantees of integrity.
 These connections **are not currently safe** to run over untrusted and/or
 public networks.
+-->
+apiserver からノード、ポッド、サービスに対する接続は、デフォルトでは単なる HTTP 接続です。
+そのため、通信は認証されておらず、暗号化もされていません。
+安全な HTTP 接続のためには、ノード、ポッド、サービス名の API URL の先頭に `https:` を付けますが、HTTPS エンドポイント証明書の正当性を確認していないだけでなく、クライアント信用証明（credential）も提供しません。
+そのため、通信は暗号化されますが、整合性の保証は提供されません。
+信頼できないおよび公開ネットワークを越える場合、これらの通信は **そのままでは安全ではあません** 。
 
 {{% /capture %}}
