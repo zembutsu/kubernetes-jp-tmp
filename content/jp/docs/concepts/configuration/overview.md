@@ -146,33 +146,63 @@ A desired state of an object is described by a Deployment, and if changes to tha
 <!--
 - You can manipulate labels for debugging. Because Kubernetes controllers (such as ReplicaSet) and Services match to Pods using selector labels, removing the relevant labels from a Pod will stop it from being considered by a controller or from being served traffic by a Service. If you remove the labels of an existing Pod, its controller will create a new Pod to take its place. This is a useful way to debug a previously "live" Pod in a "quarantine" environment. To interactively remove or add labels, use [`kubectl label`](/docs/reference/generated/kubectl/kubectl-commands#label).
 -->
-- デバッグ用途でラベルを操作できます。Kubernetes コントローラ（ReplicaSet など）とサービスは、一致するポッドの発見するためにセレクタ・ラベルを使います。また、ポッドから適切なラベルを削除すると、サービスによって
-コントローラやサー-ビスによって提供
-ポッドは停止し、
-
+- デバッグ用途でラベルを操作できます。Kubernetes コントローラ（ReplicaSet など）とサービスは、ラベルに一致するポッドの発見や、ラベルに関連するポッド削除するためにセレクタ・ラベルを使います。
+ポッドの削除によって、コントローラやサービスによって提供されるトラフィックが停止すると見なされます。
+また、既に存在するポッドから適切なラベルを削除すると、ポッドを管理しているコントローラが対象のポッドを置き換えるため、新しいポッドを作成します。
+これは直前まで「生きていた」ポッドを「隔離」環境でデバッグするのに役立ちます。
+ラベルを対話的に追加・削除するには  [`kubectl label`](/docs/reference/generated/kubectl/kubectl-commands#label) を使います。
 
 <!--
 ## Container Images
 -->
 ## コンテナ・イメージ {#container-images}
 
+<!--
 - The default [imagePullPolicy](/docs/concepts/containers/images/#updating-images) for a container is `IfNotPresent`, which causes the [kubelet](/docs/admin/kubelet/) to pull an image only if it does not already exist locally. If you want the image to be pulled every time Kubernetes starts the container, specify `imagePullPolicy: Always`.
+-->
+- コンテナに対するデフォルトの [イメージ取得方針（imagePullPolicy）](/jp/docs/concepts/containers/images/#updating-images) は、 `IfNotPresent` （もしも存在しなければ）です。これはローカル環境上にイメージが存在しない時に限り、 [kubelet](/jp/docs/admin/kubelet/) がイメージを取得（pull）します。
+もしも Kubernetes がコンテナの開始時に毎回イメージを取得したい場合は、 `imagePullPolicy: Always` を指定します。
 
+<!--
   An alternative, but deprecated way to have Kubernetes always pull the image is to use the `:latest` tag, which will implicitly set the `imagePullPolicy` to `Always`.
+-->
+代替案として、非推奨な手法としては、Kubernetes でイメージの取得時常に `:latest` （最新）タグの指定です。これは `imagePullPolicy` を `Always` （常に）と暗黙的に指定します。
 
 {{< note >}}
+<!--
   **Note:** You should avoid using the `:latest` tag when deploying containers in production, because this makes it hard to track which version of the image is running and hard to roll back.
+-->
+  **メモ：** 本番敢行でのコンテナの配置（デプロイ）では、 `:latest` タグの使用を避けるべきでしょう。そうしなければ、実行しているイメージのバージョン追跡が困難ですし、巻き戻し（ロールバック）も困難です。
 {{< /note >}}
 
+<!--
 - To make sure the container always uses the same version of the image, you can specify its [digest](https://docs.docker.com/engine/reference/commandline/pull/#pull-an-image-by-digest-immutable-identifier) (for example `sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2`). This uniquely identifies a specific version of the image, so it will never be updated by Kubernetes unless you change the digest value.
+-->
+- コンテナで常に同じバージョンのイメージを確実に使うためには、[ダイジェスト（digest）](https://docs.docker.com/engine/reference/commandline/pull/#pull-an-image-by-digest-immutable-identifier) を使えます（例  `sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2` ）。
+これはイメージに対して固有の識別子でバージョンを指定しますので、ダイジェスト値を変更しない限り、Kubernetes が勝手にイメージを更新することは決してありません。 
 
+
+<!--
 ## Using kubectl
+-->
+## kubectl を使う {#using-kubectl}
 
+<!--
 - Use `kubectl apply -f <directory>` or `kubectl create -f <directory>`. This looks for Kubernetes configuration in all `.yaml`, `.yml`, and `.json` files in `<directory>` and passes it to `apply` or `create`.
+-->
+- `kubectl apply -f <ディレクトリ>` や `kubectl create -f <ディレクトリ>` を使います。この形式は `<ディレクトリ>` 内にある全ての `.yaml` 、 `.yml` 、 `.json` ファイルにある構成情報をさがし、 `apply` や `create` に渡します。
 
+<!--
 - Use label selectors for `get` and `delete` operations instead of specific object names. See the sections on [label selectors](/docs/concepts/overview/working-with-objects/labels/#label-selectors) and [using labels effectively](/docs/concepts/cluster-administration/manage-deployment/#using-labels-effectively).
+-->
+- オブジェクト名を指定するかわりに、 `get` と `delete` ではラベル・セレクタを使います。
+[ラベル・セレクタ](/jp/docs/concepts/overview/working-with-objects/labels/#label-selectors) と [ラベルを効率的に使う](/jp/docs/concepts/cluster-administration/manage-deployment/#using-labels-effectively) をご覧ください。
 
+<!--
 - Use `kubectl run` and `kubectl expose` to quickly create single-container Deployments and Services. See [Use a Service to Access an Application in a Cluster](/docs/tasks/access-application-cluster/service-access-application-cluster/) for an example.
+-->
+- `kubectl run` と `kubectl expose`  で、素早く１つのコンテナデプロイメントとサービスを作成できます。例は [サービスをクラスタ内のアプリケーションへのアクセスのために使う](/jp/docs/tasks/access-application-cluster/service-access-application-cluster/) をご覧ください。
+
 
 {{% /capture %}}
 

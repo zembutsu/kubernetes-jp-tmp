@@ -3,7 +3,7 @@ reviewers:
 - davidopp
 - kevin-wangzefeng
 - bsalamat
-title: Assigning Pods to Nodes
+title: ノードにポッドを割り当て
 content_template: templates/concept
 weight: 30
 ---
@@ -12,6 +12,7 @@ weight: 30
 
 {{% capture overview %}}
 
+<!--
 You can constrain a [pod](/docs/concepts/workloads/pods/pod/) to only be able to run on particular [nodes](/docs/concepts/architecture/nodes/) or to prefer to
 run on particular nodes. There are several ways to do this, and they all use
 [label selectors](/docs/concepts/overview/working-with-objects/labels/) to make the selection.
@@ -20,10 +21,18 @@ Generally such constraints are unnecessary, as the scheduler will automatically 
 but there are some circumstances where you may want more control on a node where a pod lands, e.g. to ensure
 that a pod ends up on a machine with an SSD attached to it, or to co-locate pods from two different
 services that communicate a lot into the same availability zone.
+-->
+特定の [ノード](/jp/docs/concepts/architecture/nodes/) 上での[ポッド](/jp/docs/concepts/workloads/pods/pod/) の実行制限や、詳細を指定したノード上での実行が望ましいといった制限が可能です。
+制限をするにはいくつかの方法があります。また、選択にあたっては全て [ラベル・セレクタ（label selector）](/docs/concepts/overview/working-with-objects/labels/) を使います。
+一般的に、このような制限は不要です。
+スケジューラは適切かつ自動的に配置します（例：ノード全体にポッドを展開しますが、十分な空きリソースがないなどのノードにはポッドを置きません）。
+しかし、いくつかの事情があれば、
 
+
+<!--
 You can find all the files for these examples [in our docs
 repo here](https://github.com/kubernetes/website/tree/{{< param "docsbranch" >}}/content/en/docs/concepts/configuration/).
-
+-->
 {{% /capture %}}
 
 {{% capture body %}}
