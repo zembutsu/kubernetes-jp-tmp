@@ -26,18 +26,18 @@ services that communicate a lot into the same availability zone.
 制限をするにはいくつかの方法があります。また、選択にあたっては全て [ラベル・セレクタ（label selector）](/docs/concepts/overview/working-with-objects/labels/) を使います。
 一般的に、このような制限は不要です。
 スケジューラは適切かつ自動的に配置します（例：ノード全体にポッドを展開しますが、十分な空きリソースがないなどのノードにはポッドを置きません）。
-しかし、いくつかの事情があれば、
-
+しかし、いくつかの事情があれば、ポッドを置くためのノードをさらに制御したい場合など、確実に指定したい場合、例えば最終的には SSD のあるマシンで起動するためや、同じアベイラビリティ・ゾーンのなかで、異なる２つのサービスを一緒のポッドにして通信したい場合などがあります。
 
 <!--
 You can find all the files for these examples [in our docs
 repo here](https://github.com/kubernetes/website/tree/{{< param "docsbranch" >}}/content/en/docs/concepts/configuration/).
 -->
+これらのサンプルに関するファイル全ては、 [こちらのドキュメント・リポジトリ](https://github.com/kubernetes/website/tree/{{< param "docsbranch" >}}/content/en/docs/concepts/configuration/) にあります。
 {{% /capture %}}
 
 {{% capture body %}}
 
-## nodeSelector
+## nodeSelector（ノード・セレクタ） {#nodeselector}
 
 `nodeSelector` is the simplest form of constraint.
 `nodeSelector` is a field of PodSpec. It specifies a map of key-value pairs. For the pod to be eligible
