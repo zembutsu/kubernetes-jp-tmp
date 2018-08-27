@@ -1,7 +1,7 @@
 ---
 reviewers:
 - bprashanth
-title: Services
+title: サービス
 content_template: templates/concept
 weight: 10
 ---
@@ -9,7 +9,7 @@ weight: 10
 {{< toc >}}
 
 {{% capture overview %}}
-
+<!--
 Kubernetes [`Pods`](/docs/concepts/workloads/pods/pod/) are mortal. They are born and when they die, they
 are not resurrected.  [`ReplicaSets`](/docs/concepts/workloads/controllers/replicaset/) in
 particular create and destroy `Pods` dynamically (e.g. when scaling up or down).  While each `Pod` gets its own IP address, even
@@ -18,36 +18,69 @@ a problem: if some set of `Pods` (let's call them backends) provides
 functionality to other `Pods` (let's call them frontends) inside the Kubernetes
 cluster, how do those frontends find out and keep track of which backends are
 in that set?
+-->
+Kubernetes の [`ポッド`](/jp/docs/concepts/workloads/pods/pod/) は死を免れません（停止を免れません）。
+作成されたポッドが死んでも、生き返りません。
+特に  [`ReplicaSet`](/jp/docs/concepts/workloads/controllers/replicaset/) では `ポッド` の作成・破棄は動的です（例：スケールアップやダウン時）。
+各 `ポッド` は自身の IP アドレスを持ちます。たとえ各 IP アドレスが常に安定していない場合でもです。
+この挙動によって、問題に至ります。
+Kubernetes クラスタ内で、もしも `ポッド` の集まり（これらをバックエンドと呼びます）が他の `ポッド` （フロントエンドと呼びます）に機能を提供している場合、どのようにしてフロントエンドはバックエンドの場所を追跡し続けられるでしょうか。
 
+<!--
 Enter `Services`.
+-->
+`サービス（Service）` に参加します。
 
+<!--
 A Kubernetes `Service` is an abstraction which defines a logical set of `Pods`
 and a policy by which to access them - sometimes called a micro-service.  The
 set of `Pods` targeted by a `Service` is (usually) determined by a [`Label
 Selector`](/docs/concepts/overview/working-with-objects/labels/#label-selectors) (see below for why you might want a
 `Service` without a selector).
+-->
+Kubernetes `サービス（Service）` は、論理的な `ポッド` の集まりと、それらへの接続方針（ポリシー）をまとめた抽象概念であり、これらは時々マイクロサービスと呼ばれます。
+`ポッド` の集まりを `サービス` として絞り込むのに決めるのは（通常は） [`ラベル・セレクタ（Label Selector）`](/jp/docs/concepts/overview/working-with-objects/labels/#label-selectors) です（セレクタがない `サービス` を使いたい場合は、以下をご覧ください）。
 
+<!--
 As an example, consider an image-processing backend which is running with 3
 replicas.  Those replicas are fungible - frontends do not care which backend
 they use.  While the actual `Pods` that compose the backend set may change, the
 frontend clients should not need to be aware of that or keep track of the list
 of backends themselves.  The `Service` abstraction enables this decoupling.
+-->
+たとえば、３つのレプリカ（複製）をバックエンドで実行する処理を考えましょう。
+各レプリカ（複製）は代替可能です。
+つまり、フロントエンドはバックエンドで何を使おうが気にしません。
+バックエンドを構成する実際の `ポッド` が変わったとしても、フロントエンドのクライアントは注意を払う必要がありません。。
+また、バックエンドの一覧を追跡し続ける必要もありません。
+`サービス` の抽象化によって、ｋのような分離（分断）を実現します。
 
+<!--
 For Kubernetes-native applications, Kubernetes offers a simple `Endpoints` API
 that is updated whenever the set of `Pods` in a `Service` changes.  For
 non-native applications, Kubernetes offers a virtual-IP-based bridge to Services
 which redirects to the backend `Pods`.
+-->
+Kubernetes ネイティブなアプリケーションでは、Kubernetes はシンプルな `エンドポイント（Endpoint）` API を提供するので、ここから `サービス` 内の `ポッド` がどのような状態に変更したかを把握できます。
 
 {{% /capture %}}
 
 {{% capture body %}}
 
+<!--
 ## Defining a service
+-->
+## サービスの定義 {#defining-a-service}
 
+<!--
 A `Service` in Kubernetes is a REST object, similar to a `Pod`.  Like all of the
 REST objects, a `Service` definition can be POSTed to the apiserver to create a
 new instance.  For example, suppose you have a set of `Pods` that each expose
 port 9376 and carry a label `"app=MyApp"`.
+-->
+Kubernetes 内の `サービス（Service）` とは REST オブジェクトであり、 `ポッド（Pod）` と似ています。
+全ての REST オブジェクト同様に、 apiserver に対して `Service（サービス）` の定義を投げる（POSTする）と、新しいサービスを作成します。
+たとえば、ポート 9376 を外部に公開してラベル '"app=MyAPp"' がある `ポッド` の集まりを持っていると家庭しましょう。
 
 ```yaml
 kind: Service
@@ -63,13 +96,21 @@ spec:
     targetPort: 9376
 ```
 
+<!--
 This specification will create a new `Service` object named "my-service" which
 targets TCP port 9376 on any `Pod` with the `"app=MyApp"` label.  This `Service`
 will also be assigned an IP address (sometimes called the "cluster IP"), which
 is used by the service proxies (see below).  The `Service`'s selector will be
 evaluated continuously and the results will be POSTed to an `Endpoints` object
 also named "my-service".
+-->
+この指定は、「mpo-to 
+ y-service」という名称の新しい `Service` を作成します。
+サービスは `"app=MyApp"` ラベルを持つあらゆる `ポッド` 上の、 TCP ポート 9376 を対象（ターゲット）とします。
+また、`Service` には IP アドレスが割り当てられ（「クラスタ IP」とも呼ばれます）、サービスのプロキシとして使われます（以下をご覧ください）。
+`Service` のセレクタ（selector）は継続的に評価を行います。そして、その結果を名称「my-service」オブジェクトの `Endpoint（エンドポイント）` として apiserver に投稿します。
 
+<!--
 Note that a `Service` can map an incoming port to any `targetPort`.  By default
 the `targetPort` will be set to the same value as the `port` field.  Perhaps
 more interesting is that `targetPort` can be a string, referring to the name of
@@ -78,23 +119,49 @@ be different in each backend `Pod`. This offers a lot of flexibility for
 deploying and evolving your `Services`.  For example, you can change the port
 number that pods expose in the next version of your backend software, without
 breaking clients.
+-->
+`Service` は受信用のポート（incoming port）として、あらゆる `targetPort` （対象ポート／ターゲット・ポート）として割り当て（マップ）できるのに注目します。
+デフォルトでは、 `targetPort` （対象ポート）は `port` フィールドと同じ値が設定されます。
+面白いことに、`targetPort` を文字列にして、 `ポッド` のバックエンドにあるポートを名前で参照できます。
+名前のところは、バックエンドの `ポッド` ごとにそれぞれ実際のポート番号が割り当てられます。
+これにより、 `サービス`  に対する配置（デプロイ）と発達に大きな柔軟性をもたらします。
+たとえば、次のバージョンのバックエンド・ソフトウェアで、ポッドが公開するポート番号を変更したとしても、クライアントの停止はありません。
 
+<!--
 Kubernetes `Services` support `TCP` and `UDP` for protocols.  The default
 is `TCP`.
+-->
 
+pKubernetes `サービス` は `TCP` と `UDP`  プロトコルをサポートします。
+デフォルトは `TCP` です。
+
+<!--
 ### Services without selectors
+-->
+### セレクタのないサービス {#services-without-selectors}
 
+<!--
 Services generally abstract access to Kubernetes `Pods`, but they can also
 abstract other kinds of backends.  For example:
+-->
+サービスは通常 Kubernetes `ポッド` に対するアクセスを抽象化しますが、他のバックエンドなども抽象化します。たとえば、
 
+<!--
   * You want to have an external database cluster in production, but in test
     you use your own databases.
   * You want to point your service to a service in another
     [`Namespace`](/docs/concepts/overview/working-with-objects/namespaces/) or on another cluster.
   * You are migrating your workload to Kubernetes and some of your backends run
     outside of Kubernetes.
+-->
+  * 本番環境（プロダクション）では外部のデータベース・クラスタを使いたいが、テストでは自身のデータベースを使う
+  * サービスから他の [`名前空間（Namespace）`](/jp/docs/concepts/overview/working-with-objects/namespaces/) や他のクラスタにあるサービスを示したい
+  * Kubernetes 処理の移行や、バックエンドのいくつかを Kubernetes の外で実行したい
 
+<!--
 In any of these scenarios you can define a service without a selector:
+-->
+これら３つのシナリオの場合、セレクタの無いサービスを定義できます。
 
 ```yaml
 kind: Service
@@ -108,8 +175,12 @@ spec:
     targetPort: 9376
 ```
 
+<!--
 Because this service has no selector, the corresponding `Endpoints` object will not be
 created. You can manually map the service to your own specific endpoints:
+-->
+このサービスはセレクタを持たないため、 `Endpoints` に相当するオブジェクトは作成されません。
+自分自身でエンドポイントを指定して、サービスに手動で割り当て（マップ）できます。
 
 ```yaml
 kind: Endpoints
@@ -124,19 +195,32 @@ subsets:
 ```
 
 {{< note >}}
+<!--
 **NOTE** The endpoint IPs may not be loopback (127.0.0.0/8), link-local
 (169.254.0.0/16), or link-local multicast (224.0.0.0/24). They cannot be the
 cluster IPs of other Kubernetes services either because the `kube-proxy`
 component doesn't support virtual IPs as destination yet.
+-->
+**メモ：** エンドポイントの IP アドレスから除外されるのは、ループバック（127.0.0.0/8）、リンク・ローカル（169.254.0.0/16）、リンク・ローカル・マルチキャスト（224.0.0.0/24）です。
+他のこれらは Kubernetes サービス用のクラスタ IP として使えないだけでなく、 `kube-proxy` コンポーネントでも、仮想 IP を到達先として指定できません。
 {{< /note >}}
 
+<!--
 Accessing a `Service` without a selector works the same as if it had a selector.
 The traffic will be routed to endpoints defined by the user (`1.2.3.4:9376` in
 this example).
+-->
+セレクタがない `Service` に接続しても、セレクタがあるのと同じように処理できます。
+トラフィックはユーザが定義したエンドポイントに対して転送（ルート：routed）されます（この例では `1.2.3.4:9376` です）。
 
+<!--
 An ExternalName service is a special case of service that does not have
 selectors. It does not define any ports or Endpoints. Rather, it serves as a
 way to return an alias to an external service residing outside the cluster.
+-->
+ExternalName（外部名）サービスは、セレクタを持たない特別なサービスの例です。
+ポートやエンドポイントを定義していません。
+そのかわりに、クラスタの外に位置する外部サービスに対する別名（エイリアス）を返します。
 
 ```yaml
 kind: Service
@@ -149,15 +233,24 @@ spec:
   externalName: my.database.example.com
 ```
 
+<!--
 When looking up the host `my-service.prod.svc.CLUSTER`, the cluster DNS service
 will return a `CNAME` record with the value `my.database.example.com`. Accessing
 such a service works in the same way as others, with the only difference that
 the redirection happens at the DNS level and no proxying or forwarding occurs.
 Should you later decide to move your database into your cluster, you can start
 its pods, add appropriate selectors or endpoints and change the service `type`.
+-->
+ホスト `my-service.prod.svc.CLUSTER` を調べる（名前解決する）と、クラスタの DNS サービスは `my.database.example.com` の `CNAME` レコードの値を返します。
+サービスを処理するための接続は他と同様ですが、唯一違うのは、DNS レベルでの転送（リダイレクト）が発生することであり、プロキシや転送処理は発生しません。
+後でデータベースを自分のクラスタ内にいれることにあっても、このポッドを使って開始できますし、適切なセレクタやエンドポイントと、サービスの `type` を変更するだけです。
 
+<!--
 ## Virtual IPs and service proxies
+-->
+## 仮想 IP とサービス・プロキシ {#virtual-ips-and-service-proxies}
 
+<!--
 Every node in a Kubernetes cluster runs a `kube-proxy`.  `kube-proxy` is
 responsible for implementing a form of virtual IP for `Services` of type other
 than `ExternalName`.
@@ -166,8 +259,19 @@ proxy was purely in userspace.  In Kubernetes v1.1, the `Ingress` API was added
 (beta) to represent "layer 7"(HTTP) services, iptables proxy was added too,
 and become the default operating mode since Kubernetes v1.2. In Kubernetes v1.8.0-beta.0,
 ipvs proxy was added.
+-->
+Kubernetes クラスタの各ノードで実行では `kube-proxy` が動作します。
+`ExternalName` 以外の `Service` タイプに対しては、`kube-proxy` が仮想 IP 方式の実装に責任を持ちます。
+Kubernetes 1.0 では、 `Service` は「レイヤ４」（TCP/UDP over IP）を構築し、プロキシは純粋にユーザ空間（userspace）におけるものです。
+Kubernetes 1.1 では、 `Ingress` API が追加されました（ベータ）。これは「レイヤ７」（HTTP）サービスに相当し、iptables プロキシも追加されました。
+そして、Kubernetes v1.2 からは、これがデフォルトの運用状態（オペレーティング・モード）となりました。
+Kubernetes v1.8.0-beta.0で、ipvs プロキシが追加されました。
 
+<!--
 ### Proxy-mode: userspace
+-->
+### プロキシ・モード：userspace（ユーザ空間） {#proxy-mode-userspace}
+
 
 In this mode, kube-proxy watches the Kubernetes master for the addition and
 removal of `Service` and `Endpoints` objects. For each `Service` it opens a
@@ -179,11 +283,22 @@ capture traffic to the `Service`'s `clusterIP` (which is virtual) and `Port`
 and redirects that traffic to the proxy port which proxies the backend `Pod`.
 By default, the choice of backend is round robin.
 
+このモードでは、kube-proxy は Kubernetes マスタに対し、 `Service` と `Endpoints`  オブジェクトの追加と削除を監視します。
+各 `Service` に対して、ノーカル・ノード上のポートを（ランダムに選択して）開きます。
+この「proxy port」に対するあらゆる接続は、`Service` のバックエンドにある `ポッド`（ `Endpoints` として申請している ）の１つにプロキシされます。
+
+
+
 ![Services overview diagram for userspace proxy](/images/docs/services-userspace-overview.svg)
 
+<!--
 Note that in the above diagram, `clusterIP` is shown as `ServiceIP`.
+-->
 
+<!--
 ### Proxy-mode: iptables
+-->
+### プロキシ・モード：iptables
 
 In this mode, kube-proxy watches the Kubernetes master for the addition and
 removal of `Service` and `Endpoints` objects. For each `Service`, it installs

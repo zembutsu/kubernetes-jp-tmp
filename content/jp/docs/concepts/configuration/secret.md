@@ -1,7 +1,7 @@
 ---
 reviewers:
 - mikedanese
-title: Secrets
+title: 機密情報（シークレット）
 content_template: templates/concept
 weight: 50
 ---
@@ -9,28 +9,47 @@ weight: 50
 {{< toc >}}
 
 {{% capture overview %}}
-
+<!--
 Objects of type `secret` are intended to hold sensitive information, such as
 passwords, OAuth tokens, and ssh keys.  Putting this information in a `secret`
 is safer and more flexible than putting it verbatim in a `pod` definition or in
 a docker image. See [Secrets design document](https://git.k8s.io/community/contributors/design-proposals/auth/secrets.md) for more information.
-
+-->
+`secret` 型のオブジェクトは、機密事項を扱う情報を保持するためにあります。
+たとえばパスワード、OAuth トークン、SSH 鍵などです。
+`secret` の中に情報を入れるのは、 `pod` での逐次定義や docker イメージに置くよりも、柔軟かつ安全です。
+詳しい情報は[シークレット設計ドキュメント](https://git.k8s.io/community/contributors/design-proposals/auth/secrets.md)をご覧ください。
 {{% /capture %}}
 
 {{% capture body %}}
 
+<!--
 ## Overview of Secrets
+-->
+## シークレット概要
 
+<!--
 A Secret is an object that contains a small amount of sensitive data such as
 a password, a token, or a key.  Such information might otherwise be put in a
 Pod specification or in an image; putting it in a Secret object allows for
 more control over how it is used, and reduces the risk of accidental exposure.
+-->
+シークレットはオブジェクトであり、パスワード、トークン、鍵といった、小さな機密事項を扱うデータを含みます。
+このような情報はポッド specification やイメージ内に置くこともできます。
+ですが、シークレット・オブジェクトによって、情報をの管理をしやすくし、意図しない漏洩の危険性を減らします。
 
+<!--
 Users can create secrets, and the system also creates some secrets.
+-->
+ユーザがシークレットを作成できるだけでなく、システムもまたシークレットを作成できます。
 
+<!--
 To use a secret, a pod needs to reference the secret.
 A secret can be used with a pod in two ways: as files in a [volume](/docs/concepts/storage/volumes/) mounted on one or more of
 its containers, or used by kubelet when pulling images for the pod.
+-->
+シークレットを使うには、ポッドの必要に応じてシークレットを参照します。
+シークレットをポッドの中で使うには２つの方法があります。コンテナ内の１つまたは複数の [ボリューム](/jp/docs/concepts/storage/volumes/)  にファイルとしてマウントするか、あるいは kubectl でポッド用のイメージを取得する時に使います。
 
 ### Built-in Secrets
 

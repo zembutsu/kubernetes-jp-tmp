@@ -2,7 +2,7 @@
 reviewers:
 - davidopp
 - wojtek-t
-title: Pod Priority and Preemption
+title: ポッド優先度と先行停止
 content_template: templates/concept
 weight: 70
 ---
@@ -12,36 +12,66 @@ weight: 70
 {{< feature-state for_k8s_version="1.8" state="alpha" >}}
 {{< feature-state for_k8s_version="1.11" state="beta" >}}
 
+<!--
 [Pods](/docs/user-guide/pods) can have _priority_. Priority
 indicates the importance of a Pod relative to other Pods. If a Pod cannot be scheduled,
 the scheduler tries to preempt (evict) lower priority Pods to make scheduling of the
 pending Pod possible.
+-->
+[ポッド](/jp/docs/user-guide/pods) には _優先度（priority）_ があります。
+優先度では他のポッドに対する相対的な重要度を示します。
+もしもポッドをスケジュールできなければ、スケジューラは保留しているポッドをスケジューリング可能にするため、優先度の低いポッドの先行停止（preempt）（退去）を試みます。
 
+<!--
 In Kubernetes 1.9 and later, Priority also affects scheduling
 order of Pods and out-of-resource eviction ordering on the Node.
+-->
+Kubernetes 1.9 以降では、ノード上でリソース不足が発生した際、ポッドの退避順番を決めるのにも影響します。
 
+<!--
 Pod priority and preemption are moved to beta since Kubernetes 1.11 and are enabled by default in
 this release and later.
+-->
+ポッドの優先度と先行停止は Kubernetes 1.11 ではベータに移行しました。
+そして、以後のリリースではデフォルトになります。
 
+<!--
 In Kubernetes versions where Pod priority and preemption is still an alpha-level
 feature, you need to explicitly enable it. To use these features in the older versions of
 Kubernetes, follow the instructions in the documentation for your Kubernetes version, by
 going to the documentation archive version for your Kubernetes version.
+-->
+Kubernetes のバージョンによっては、ポッドの優先度と先行停止機能はアルファ段階の機能であり、必要に応じて有効化する必要があります。
+Kubernetes の古いバージョンでこの機能を使うには、各 Kubernetes のバージョンのドキュメントを読むために、Kubernetes バージョンに対応したドキュメンとがあるアーカイブに移動してください。
 
+<!--
 | Kubernetes Version | Priority and Preemption State | Enabled by default |
 | -------- |:-----:|:----:|
 | 1.8      | alpha |   no |
 | 1.9      | alpha |   no |
 | 1.10     | alpha |   no |
 | 1.11     | beta  |  yes |
+-->
+| Kubernetes バージョン | 優先度と先行停止の状況 | デフォルトで有効化 |
+| -------- |:-----:|:----:|
+| 1.8      | alpha |   いいえ |
+| 1.9      | alpha |   いいえ |
+| 1.10     | alpha |   いいえ |
+| 1.11     | beta  |  はい |
 
 {{< warning >}}
+<!--
 **Warning**: In a cluster where not all users are trusted, a malicious
 user could create pods at the highest possible priorities, causing
 other pods to be evicted/not get scheduled. To resolve this issue,
 [ResourceQuota](https://kubernetes.io/docs/concepts/policy/resource-quotas/) is augmented to support
 Pod priority. An admin can create ResourceQuota for users at specific priority levels, preventing
 them from creating pods at high priorities. However, this feature is in alpha as of Kubernetes 1.11.
+-->
+**警告：**  クラスタ内の全てのユーザが信頼できない場合は、悪意のあるユーザがポッドを作成し、高い優先度を設定すると、他のポッドの退避を引き起こしたり、スケジュールができなくなる場合があります。
+この問題を解決するには [リソース制限（ResourceQuota）](/jp/docs/concepts/policy/resource-quotas/) をポッドの優先度のサポートにあわせて補強します。
+管理者はユーザに対するリソース制限（ResoruceQuota） を指定し、優先度レベルの設定や、ポッド作成時に高い優先度の設定を不可能にします。
+しかしながら、この機能は kubernetes 1.11 ではアルファです。
 {{< /warning >}}
 
 {{% /capture %}}
