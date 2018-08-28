@@ -286,67 +286,112 @@ By default, the choice of backend is round robin.
 このモードでは、kube-proxy は Kubernetes マスタに対し、 `Service` と `Endpoints`  オブジェクトの追加と削除を監視します。
 各 `Service` に対して、ノーカル・ノード上のポートを（ランダムに選択して）開きます。
 この「proxy port」に対するあらゆる接続は、`Service` のバックエンドにある `ポッド`（ `Endpoints` として申請している ）の１つにプロキシされます。
-
-
+バックエンド `ポッド` を決定するにあたっては、 `Service`  の `SessionAffinity` をベースとしています。
+最終的にインストールする iptables のルールとは、 `サービス` の `クラスタ IP`（仮想的なもの）と `ポート` とリダイレクトするためにトラフィックを集めるものです。これにより、プロキシ・ポートに対するトラフィックが、バックエンドの `ポッド` に対するプロキシ（代理）となります。
+デフォルトでは、バックエンドの選択は、ラウンド・ロビンです。
 
 ![Services overview diagram for userspace proxy](/images/docs/services-userspace-overview.svg)
 
 <!--
 Note that in the above diagram, `clusterIP` is shown as `ServiceIP`.
 -->
+上図で `ServiceIP` （サービスIP）として書かれている部分が `clouserIP` （クラスタIP）ですのでご注意ください。
 
 <!--
 ### Proxy-mode: iptables
 -->
 ### プロキシ・モード：iptables
 
+<!--
 In this mode, kube-proxy watches the Kubernetes master for the addition and
 removal of `Service` and `Endpoints` objects. For each `Service`, it installs
 iptables rules which capture traffic to the `Service`'s `clusterIP` (which is
 virtual) and `Port` and redirects that traffic to one of the `Service`'s
 backend sets.  For each `Endpoints` object, it installs iptables rules which
 select a backend `Pod`. By default, the choice of backend is random.
+-->
+このモードでは、kube-proxy は Kubernetes マスタで `Service` と `Endpoints` オブジェクトの追加と削除を監視します。
+`Service` ごとに iptables ルールをインストールし、 `Service` の `clusterIP` （仮想のもの）と `Port`に対するトラフィックを集めます（キャプチャします）。そして、 `Service` のバックエンド・セットの１つに対してトラフィックをリダイレクト（出力先を変更）します。
+各 `Endpoints` オブジェクトに対して、選択されたバックエンド `ポッド` に対する iptables ルールを投入します。
+でforとでは、ランダムがバックエンドとして選択されます。
 
+<!--
 Obviously, iptables need not switch back between userspace and kernelspace, it should be
 faster and more reliable than the userspace proxy. However, unlike the
 userspace proxier, the iptables proxier cannot automatically retry another
 `Pod` if the one it initially selects does not respond, so it depends on
 having working [readiness probes](/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#defining-readiness-probes).
+-->
+言う前でもなく、iptables はユーザ空間（userspace）とカーネル空間（kernelspace）間にスイッチバック（切り替え復帰）が不要でした。
+これがユーザ空間プロキシよりも速く信頼できたであろうからです。
+しかしながら、ユーザ空間 proxier のように、仮に初めに設定された `ポッド` が応答していなくても、 iptables の proxier は自動的に他の `ポッド` に対してリトライできません。
+そのため、[readiness robes](/jp/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#defining-readiness-probes) の動作に依存します。
 
 ![Services overview diagram for iptables proxy](/images/docs/services-iptables-overview.svg)
 
+<!--
 Note that in the above diagram, `clusterIP` is shown as `ServiceIP`.
+-->
+上図で `ServiceIP` （サービスIP）として書かれている部分が `clouserIP` （クラスタIP）ですのでご注意ください。
 
+<!--
 ### Proxy-mode: ipvs
+-->
+### プロキシ・モード：ipvs {#proxy-mode:ipvs}
 
 {{< feature-state for_k8s_version="v1.9" state="beta" >}}
 
+<!--
 In this mode, kube-proxy watches Kubernetes Services and Endpoints,
 calls `netlink` interface to create ipvs rules accordingly and syncs ipvs rules with Kubernetes
 Services and Endpoints  periodically, to make sure ipvs status is
 consistent with the expectation. When Service is accessed, traffic will
 be redirected to one of the backend Pods.
+-->
+このモードでは、Kube-proxy は Kubernetes サービスとエンドポイントを監視するのに、 `netlink` と呼ぶインターフェースを呼び出します。
+このインターフェースで、 ipss  ルールが Kubernetes サービスとエンドポイントの ipvs ルールと同期しているかどうかを定期的に監視し、ipvs の挙動が確実に期待通りになるようにします。
+サービスにアクセスがあれば、トラフィックはバックエンド・ポッドの１つに対してリダイレクトします。
 
+<!--
 Similar to iptables, Ipvs is based on netfilter hook function, but uses hash
 table as the underlying data structure and works in the kernel space.
 That means ipvs redirects traffic much faster, and has much
 better performance when syncing proxy rules. Furthermore, ipvs provides more
 options for load balancing algorithm, such as:
+-->
+iptablesと同様に、 Ipvs はネットフィルタ・フック機能をベースにしています。
+しかし、基本のデータ構造はハッシュ・テーブルを使い、カーネル空間で動作します。
+つまり、ipvs はトラフィックをより速くリダイレクトし、プロキシ・ルールの同期も性能が良くなります。
+それだけでなく、ipvs は以下の負荷分散アルゴリズムにも対応しています：
 
+<!--
 - `rr`: round-robin
 - `lc`: least connection
 - `dh`: destination hashing
 - `sh`: source hashing
 - `sed`: shortest expected delay
 - `nq`: never queue
+-->
+- `rr`: ラウンド・ロビン（round-robin）
+- `lc`: 最小接続数（least connection）
+- `dh`: 送信先ハッシュ（destination hashing）
+- `sh`: 送信元ハッシュ（source hashing）
+- `sed`:最短遅延（shortest expected delay）
+- `nq`: キュー無し（never queue）
 
+<!--
 **Note:** ipvs mode assumes IPVS kernel modules are installed on the node
 before running kube-proxy. When kube-proxy starts with ipvs proxy mode,
 kube-proxy would validate if IPVS modules are installed on the node, if
 it's not installed kube-proxy will fall back to iptables proxy mode.
+-->
+**メモ：** ipvs モードでは、ノードで kube-proxy を実行する前に IPVS カーネル・モジュールがインストールされているのを想定しています。
+kube-proxy が ipvs プロキシ・モードで開始すると、 kube-proxy はノード上に IPVS モジュールがインストールされているかどうかを確認します。
+もしもインストールされていなければ、iptables プロキシ・モードに後退します。
 
 ![Services overview diagram for ipvs proxy](/images/docs/services-ipvs-overview.svg)
 
+<!--
 In any of these proxy model, any traffic bound for the Service’s IP:Port is
 proxied to an appropriate backend without the clients knowing anything
 about Kubernetes or Services or Pods. Client-IP based session affinity
@@ -355,13 +400,28 @@ can be selected by setting `service.spec.sessionAffinity` to "ClientIP"
 setting the field `service.spec.sessionAffinityConfig.clientIP.timeoutSeconds`
 if you have already set `service.spec.sessionAffinity` to "ClientIP"
 (the default is “10800”).
+-->
+これらの各プロキシ・モデルにおいて、あらゆるトラフィックはサービスの IP に対して向けられます。
+つまり、クライアントは Kubernetes やサービスやポッドに関する貞節なバックエンドを知らなくても、ポートに対してプロキシされます。
+クライアント IP をベースとしたセッション・アフィニティ（session affinity）を選択するには、 `ClientIP` に対する `service.spec.sessionAffinity`  の設定 （デフォルトは "None"）によって作成されます。
+そして、  `service.spec.sessionAffinity` で "ClientIP" が指定されていれば、`service.spec.sessionAffinityConfig.clientIP.timeoutSeconds ` フィールドの設定によって最大セッション・スティッキー・タイム（max session sticky time）を指定できます（デフォルトは "10800"）。
 
+<!--
 ## Multi-Port Services
+-->
+## マルチ・ポート・サービス {#multi-port-services}
 
+<!--
 Many `Services` need to expose more than one port.  For this case, Kubernetes
 supports multiple port definitions on a `Service` object.  When using multiple
 ports you must give all of your ports names, so that endpoints can be
 disambiguated.  For example:
+-->
+多くの 'Service' は複数のポートを外部に対して公開する必要があります。
+そのために、Kubernetes は `Service` オブジェクト上に複数のポート定義をサポートしています。
+複数のポートを使うとき、全てのポート名の指定が必要なため、エンドポイントの曖昧さを無くします。以下が例です。
+
+
 
 ```yaml
 kind: Service
@@ -382,10 +442,18 @@ spec:
     targetPort: 9377
 ```
 
+<!-
 Note that the port names must only contain lowercase alphanumeric characters and `-`, and must begin & end with an alphanumeric character. `123-abc` and `web` are valid, but `123_abc` and `-web` are not valid names.
+-->
+ポート名に含められるのは、小文字の英数字の `-` のみであり、先頭と末尾は英数委ｊの必要があります。
+`123-abc` と `web` は有効ですが、 `123_abc` や `-web` は有効な名前ではありません。
 
+<!--
 ## Choosing your own IP address
+-->
+## 自分が持つ IP アドレスを選択 {#choosing-your-own-ip-address}
 
+<!--
 You can specify your own cluster IP address as part of a `Service` creation
 request.  To do this, set the `.spec.clusterIP` field. For example, if you
 already have an existing DNS entry that you wish to replace, or legacy systems
@@ -394,39 +462,79 @@ The IP address that a user chooses must be a valid IP address and within the
 `service-cluster-ip-range` CIDR range that is specified by flag to the API
 server.  If the IP address value is invalid, the apiserver returns a 422 HTTP
 status code to indicate that the value is invalid.
+-->
+`Service` 作成要求（リクエスト）の一部として、自分自身のクラスタ IP アドレスを指定できます。
+そのためには、 `.spec.clusterIP` フィールドを設定します。
+たとえば、既に既存の DNS エントリを持っており置き換えたいか、レガシー（古い）システムのため IP アドレスの設定や再設定が困難な場合があります。
+ユーザが選択する IP アドレスが必ず有効なものである必要があり、API サーバに対するフラグを `service-cluster-ip-range` CIDR 範囲内である必要もあります。
+もしも IP アドレスの値が無効であれば、apiserver は 422 HTTP ステータスコードを返し、値が無効だと示します。
 
+<!--
 ### Why not use round-robin DNS?
+-->
+### なぜラウンド・ロビン DNS を使わないのですか？ {#why-not-use-round-robin-dns}
 
+<!--
 A question that pops up every now and then is why we do all this stuff with
 virtual IPs rather than just use standard round-robin DNS.  There are a few
 reasons:
+-->
+標準的なラウンド・ロビン DNS を使うのではなく、起動するたびに仮想 IP を割り当てるのはなぜでしょうか。
+これには複数の理由があります。
 
+<!--
    * There is a long history of DNS libraries not respecting DNS TTLs and
      caching the results of name lookups.
    * Many apps do DNS lookups once and cache the results.
    * Even if apps and libraries did proper re-resolution, the load of every
      client re-resolving DNS over and over would be difficult to manage.
+-->
+    * 名前解決（name lookup）にあたっては、DNS ライブラリが DNS TTL とキャッシュを尊重しない長い歴史があるため
+    * 多くのアプリケーションが DNS 名前解決を１度だけ行い、結果をキャッシュをするため
+    * アプリケーションとライブラリが適切に再決定しても、比べてのクライアントに対して再反映する管理が大変なため
 
+<!--
 We try to discourage users from doing things that hurt themselves.  That said,
 if enough people ask for this, we may implement it as an alternative.
+-->
+このような状態からユーザを失望させないように取り組んでいます。
+もしも、この件について多くの人が問い合わせに対応するため、私達は別の実装を試みます。
 
+
+<!--
 ## Discovering services
+-->
+## サービス発見 {#discovering-services}
 
+<!--
 Kubernetes supports 2 primary modes of finding a `Service` - environment
 variables and DNS.
+-->
+Kubernetes は `サービス` を見つけるための主なモードが２つあります。
+それが、環境変数と DNS です。
 
+<!--
 ### Environment variables
+-->
+### 環境変数 {#environment-variables}
 
+<!--
 When a `Pod` is run on a `Node`, the kubelet adds a set of environment variables
 for each active `Service`.  It supports both [Docker links
 compatible](https://docs.docker.com/userguide/dockerlinks/) variables (see
 [makeLinkVariables](http://releases.k8s.io/{{< param "githubbranch" >}}/pkg/kubelet/envvars/envvars.go#L49))
 and simpler `{SVCNAME}_SERVICE_HOST` and `{SVCNAME}_SERVICE_PORT` variables,
 where the Service name is upper-cased and dashes are converted to underscores.
+-->
+`Node` 上で `ポッド` を実行する時、 kubelet は各アクティブな `サービス` に対して環境変数のセットを追懐ｓｍ差宇。
+サポートしているのは、 [Docker link 互換](https://docs.docker.com/userguide/dockerlinks/) （ [makeLinkVariables](http://releases.k8s.io/{{< param "githubbranch" >}}/pkg/kubelet/envvars/envvars.go#L49) をご覧ください）と、シンプルな  `{SVCNAME}_SERVICE_HOST` and `{SVCNAME}_SERVICE_PORT` 変数です。サービス名（SVCNAME）は大文字化され、ダッシュはアンダースコアに変換されます。
 
+<!--
 For example, the Service `"redis-master"` which exposes TCP port 6379 and has been
 allocated cluster IP address 10.0.0.11 produces the following environment
 variables:
+-->
+例えば「`redis-master`」が TCP ポート 6379 を外部に対して公開し、割り当てられたクラスタ IP アドレスが 10.0.0.11 であれば、以下の環境変数が生成されます。
 
 ```shell
 REDIS_MASTER_SERVICE_HOST=10.0.0.11
@@ -438,76 +546,144 @@ REDIS_MASTER_PORT_6379_TCP_PORT=6379
 REDIS_MASTER_PORT_6379_TCP_ADDR=10.0.0.11
 ```
 
+<!--
 *This does imply an ordering requirement* - any `Service` that a `Pod` wants to
 access must be created before the `Pod` itself, or else the environment
 variables will not be populated.  DNS does not have this restriction.
+->
+*暗黙的な順序づけが必要です* 。
+あらゆる `サービス` では、 `ポッド` は `ポッド` 自身を作成する前にアクセスしたい場合があっても環境変数が作成されていない場合があるでしょう。
+DNS ではこの制約がありません。
 
 ### DNS
-
+<!--
 An optional (though strongly recommended) [cluster
 add-on](/docs/concepts/cluster-administration/addons/) is a DNS server.  The
 DNS server watches the Kubernetes API for new `Services` and creates a set of
 DNS records for each.  If DNS has been enabled throughout the cluster then all
 `Pods` should be able to do name resolution of `Services` automatically.
+-->
+オプション（ではありますが強く推奨）の [クラスタ・アドオン](/jpdocs/concepts/cluster-administration/addons/) は DNS サーバです。
+DNS サーバは Kubernetes API に新しい `サービス` と DNS レコードの集まりが生成されるのをお互いに監視します。
+もし DNS がクラスタを通して有効になれば、全ての `ポッド` は自動的に `サービス` で名前解決できるようになります。
 
+<!--
 For example, if you have a `Service` called `"my-service"` in Kubernetes
 `Namespace` `"my-ns"` a DNS record for `"my-service.my-ns"` is created.  `Pods`
 which exist in the `"my-ns"` `Namespace` should be able to find it by simply doing
 a name lookup for `"my-service"`.  `Pods` which exist in other `Namespaces` must
 qualify the name as `"my-service.my-ns"`.  The result of these name lookups is the
 cluster IP.
+-->
+たとえば、 `"my-service"` という名前の `サービスを` Kubernetes `名前空間` `"my-ns"`に持っていれば、 `"my-service.my-ns"` の DNS レコードを持ちます。
+'"my-ns"' `名前空間` にある `ポッド` からは、単純に `"my-service"` の名前で単純に名前解決できます。
+他の `名前空間` にある `ポッド`は `"my-service.my-ns"` を満たす必要があります。
+これらの名前を使ってクラスタ IP を名前解決します。
 
+<!--
 Kubernetes also supports DNS SRV (service) records for named ports.  If the
 `"my-service.my-ns"` `Service` has a port named `"http"` with protocol `TCP`, you
 can do a DNS SRV query for `"_http._tcp.my-service.my-ns"` to discover the port
 number for `"http"`.
+-->
+また、 Kubernetes は名前を付けたポートに対して DNS SRV（サービス）レコードをサポートします。
+`"my-service.my-ns"` `サービス` が `TCP` プロトコルの `"http"` という名前のポートを持つ場合、 "_http._tcp.my-service.my-ns" で `"http"` ポート番号を発見するための DNS SRV 問い合わせ（クエリ）ができます。
 
+<!--
 The Kubernetes DNS server is the only way to access services of type
 `ExternalName`.  More information is available in the [DNS Pods and Services](/docs/concepts/services-networking/dns-pod-service/).
+-->
+Kubernetes DNS サーバは `ExternalName` のサービス・タイプに対する唯一のアクセス手段です。
+詳しい情報は [DNS ポッドとサービス](/jp/docs/concepts/services-networking/dns-pod-service/) にあります。
 
+<!--
 ## Headless services
+-->
+## ヘッドレス・サービス（Headless services） {#headless-services}
 
+<!--
 Sometimes you don't need or want load-balancing and a single service IP.  In
 this case, you can create "headless" services by specifying `"None"` for the
 cluster IP (`.spec.clusterIP`).
+-->
+場合によっては負荷分散が不要でありサービス IP を１つだけ欲しい場合があるでしょう。
+このような場合、クラスタ IP （`.spec.clusterIP`） に '`None`' を指定して、 "headless" サービスを作成できます。
 
+<!--
 This option allows developers to reduce coupling to the Kubernetes system by
 allowing them freedom to do discovery their own way.  Applications can still use
 a self-registration pattern and adapters for other discovery systems could easily
 be built upon this API.
+-->
+このオプションは、開発者が Kubernetes システムに対する結合を減らすもので、各々の手法で自由に発見（ディスカバリ）できるようにします。
+アプリケーションは自分で登録したパターンを使えますし、この API 上に構築された他のディスカバリ・システムとも簡単に接続できます。
 
+<!--
 For such `Services`, a cluster IP is not allocated, kube-proxy does not handle
 these services, and there is no load balancing or proxying done by the platform
 for them. How DNS is automatically configured depends on whether the service has
 selectors defined.
-
+-->
+この `サービス` に対してクラスタ IP が割り振られなければ、kube-prox は各サービスを扱えません。
+また、プラットフォームからの負荷分散やプロキシも提供されません。
+DNS がどのように自動調整するかは、セレクタで定義したサービスの場所に依存します。
+<!--
 ### With selectors
+-->
+### セレクタあり {#with-selectors}
 
+<!--
 For headless services that define selectors, the endpoints controller creates
 `Endpoints` records in the API, and modifies the DNS configuration to return A
 records (addresses) that point directly to the `Pods` backing the `Service`.
+ｰｰ>
+各ヘッドレス・サービスには、API 中にエンドポイント・コントローラが作成した `Endpoints` レコードでセレクタの定義があります。
+そして、DNSE 設定が A （アドレス）レコードを返すように調整し、 'ポッド' のバックエンドにある `サービス` を直接示します。
 
+<!--
 ### Without selectors
+-->
+### セレクタ無し
 
+<!--
 For headless services that do not define selectors, the endpoints controller does
 not create `Endpoints` records. However, the DNS system looks for and configures
 either:
+-->
+ヘッドレス・サービスにセレクタの定義が無ければ、エンドポイント・コントローラは `Endpoints` レコードを作成しません。
+しかしながら、DNS システムは以下いずれかを探して設定します。
 
+<!--
   * CNAME records for `ExternalName`-type services.
   * A records for any `Endpoints` that share a name with the service, for all
     other types.
+-->
+   *  `ExternalName`-タイプ・サービスに対する CNAME レコード
+   * `Endpoints` に対する A レコードで、他のタイプに対するサービス名を共有する
 
+<!--
 ## Publishing services - service types
+-->
+## サービスの公開 - サービス・タイプ
 
+<!--
 For some parts of your application (e.g. frontends) you may want to expose a
 Service onto an external (outside of your cluster) IP address.
+--->
+アプリケーションの一部で（例：フロントエンド）、サービスを外部（クラスタ外）の IP アドレスに対して公開（expose）したい場合があるでしょう。
 
-
+<!--
 Kubernetes `ServiceTypes` allow you to specify what kind of service you want.
 The default is `ClusterIP`.
+-->
+Kubernetes `ServiceType（サービス・タイプ）` は、自分が必要なサービスの種類が何かを指定できます。
 
+<!--
 `Type` values and their behaviors are:
+-->
+`Type` の値と挙動は以下の通りです。
 
+<!--
    * `ClusterIP`: Exposes the service on a cluster-internal IP. Choosing this value
      makes the service only reachable from within the cluster. This is the
      default `ServiceType`.
@@ -522,35 +698,76 @@ The default is `ClusterIP`.
      (e.g. `foo.bar.example.com`), by returning a `CNAME` record with its value.
      No proxying of any kind is set up. This requires version 1.7 or higher of
      `kube-dns`.
+-->
 
+* `ClusterIP`：クラスタ内部の IP 上にあるサービスを公開します。ここで値として指定できるのは、クラスタ内で到達可能なサービスのみです。これがデフォルトの `ServiceType` です。
+* `NodePort`：各ノード IP 上の固定ポート（`NodePort`）を公開します。 `ClusterIP` サービスは `NodePort` サービスの径路であり、自動的に作成されます。 `NodePort` サービスには、クラスタ外からも `<NodeIP>:<NodePort>` を要求（リクエスト）して接続できます。
+* `LoadBalancer`：クラウド・プロバイダのロードバランサを使って、サービスを外部に公開します。 `NodePort` と `ClusterIP` サービスで、外部のロードバランサに径路付け（route）するもので、自動的に作成されます。
+* 'ExternalName'： `CNAME` レコードが返す値で `externalName` フィールド（例： `foo.bar.example.com` ）の内容とサービスを割り当てます（マップします）。あらゆる種類のプロキシは設定不要です。使うにはバージョン 1.7 以上の `kube-dns` が必要です。
+
+<!--
 ### Type NodePort
+-->
+### タイプ NodePort
 
+<!--
 If you set the `type` field to `NodePort`, the Kubernetes master will
 allocate a port from a range specified by `--service-node-port-range` flag (default: 30000-32767), and each
 Node will proxy that port (the same port number on every Node) into your `Service`.
 That port will be reported in your `Service`'s `.spec.ports[*].nodePort` field.
+-->
+`type` フィールドを `NodePort` に指定すると、 Kubernetes マスタは `--service-node-port-range` フラグで指定した範囲内のポートを割り当てます（デフォルトは 30000 ～ 32767）。
+そして、各ノードは `サービス` に対するポートの代理（プロキシ）をします（各ノード上で同じポートです）。
+ポートは `サービス` の `.spec.ports[*].nodePort` フィールドで表示されます。
 
+<!--
 If you want to specify particular IP(s) to proxy the port, you can set the `--nodeport-addresses` flag in kube-proxy to particular IP block(s) (which is supported since Kubernetes v1.10). A comma-delimited list of IP blocks (e.g. 10.0.0.0/8, 1.2.3.4/32) is used to filter addresses local to this node. For example, if you start kube-proxy with flag `--nodeport-addresses=127.0.0.0/8`, kube-proxy will select only the loopback interface for NodePort Services. The `--nodeport-addresses` is defaulted to empty (`[]`), which means select all available interfaces and is in compliance with current NodePort behaviors.
+-->
+もしもポートの代理（プロキシ）となる IP アドレスを指定したい場合には、 `--nodeport-addresses` フラグで kube-proxy に対する特定の IP ブロックを指定できます（Kubernetes v1.10 からサポート）。
+IP ブロックのカンマ区切りのリスト（例 10.0.0.0/8, 1.2.3.4/32）で、ローカルからアクセスするアドレスのフィルタに使います。
+たとば、 kube-proxy に `--nodeport-addresses=127.0.0.0/8` フラグを付けて起動すると、kube-proxy は NodePort サービスに対してループバック・インターフェースのみを指定します。
+`--nodeport-addresses` はデフォルトでは空（ `[]` ）です。これは全ての利用可能なインターフェースを選択し、現在の NodePort 挙動に従うものです。
 
+<!--
 If you want a specific port number, you can specify a value in the `nodePort`
 field, and the system will allocate you that port or else the API transaction
 will fail (i.e. you need to take care about possible port collisions yourself).
 The value you specify must be in the configured range for node ports.
+-->
+ポート番号を指定したい場合は、 `nodePort` フィールドの値を指定できます。
+そして、システムはポートを割り当てるか、そうでなければ API トランザクションを失敗にします（例：ポート衝突が発生する可能性があり、自分自身で対応する必要があります）。
+この値によって、ノード・ポートのための範囲を指定できます。
 
+<!--
 This gives developers the freedom to set up their own load balancers, to
 configure environments that are not fully supported by Kubernetes, or
 even to just expose one or more nodes' IPs directly.
+-->
+これにより、開発者は環境変数を指定し、Kubernetes に完全にサポートされていなかったり、ノードの IP を直接公開したり、
+自身で自由に負荷分散を設定できるようにします。
 
+<!--
 Note that this Service will be visible as both `<NodeIP>:spec.ports[*].nodePort`
 and `.spec.clusterIP:spec.ports[*].port`. (If the `--nodeport-addresses` flag in kube-proxy is set, <NodeIP> would be filtered NodeIP(s).)
+-->
 
+サービスは `<NodeIP>:spec.ports[*].nodePort` と `.spec.clusterIP:spec.ports[*].port`の両方で見えるのでご注意ください。
+（もしも kube-proxy で `--nodeport-addresses` フラグが設定されていれば、<NodeIP> は NodeIP でフィルタされます）
+
+<!--
 ### Type LoadBalancer
+-->
+### タイプ LoadBalancer {#type-loadbalancer}
 
+<!--
 On cloud providers which support external load balancers, setting the `type`
 field to `LoadBalancer` will provision a load balancer for your `Service`.
 The actual creation of the load balancer happens asynchronously, and
 information about the provisioned balancer will be published in the `Service`'s
 `.status.loadBalancer` field.  For example:
+-->
+外部のロードバランサをサポートしているクラウド・プロバイダ上では、 `Service` に対するロードバランサをプロビジョン（自動設定）するために `type` フィールドを `LoadBalancer`  に設定できます。
+実際のロード・バランサ作成は非同期であり、プロビジョンされたロードバランサの情報は `Service` の `.status.loadBalancer` フィールにあります。以下は例です。
 
 ```yaml
 kind: Service
@@ -573,28 +790,56 @@ status:
     - ip: 146.148.47.155
 ```
 
+<!--
 Traffic from the external load balancer will be directed at the backend `Pods`,
 though exactly how that works depends on the cloud provider. Some cloud providers allow
 the `loadBalancerIP` to be specified. In those cases, the load-balancer will be created
 with the user-specified `loadBalancerIP`. If the `loadBalancerIP` field is not specified,
 an ephemeral IP will be assigned to the loadBalancer. If the `loadBalancerIP` is specified, but the
 cloud provider does not support the feature, the field will be ignored.
+-->
+外部ロードバランサからのトラフィックはバックエンドの 'ポッド' に対して向けられますが、実際にどのようにするかは用クラウド・プロバイダイの処理に依存します。
+あるクラウド・プロバイダでは 'loadBalancerIP' で指定します。
+その場合、ロードバランサは `loadBalancerIP` をユーザで指定します。
+もし `loadBalancerIP` フィールドの指定がなければ、一時的（ephemeral）な IP が loadBalancer に割り当てられます。
+もし `loadBalancerIP` の指定があっても、クラウド・プロバイダが機能をサポートしていなければ、このフィールドは無視されます。
 
+<!--
 **Special notes for Azure**: To use user-specified public type `loadBalancerIP`, a static type
 public IP address resource needs to be created first, and it should be in the same resource
 group of the cluster. Specify the assigned IP address as loadBalancerIP. Verify you have 
 securityGroupName in the cloud provider configuration file.
+-->
+**Azure 向けの特別な注意**：ユーザが指定するパブリック・タイプ `loadBalancerIP` は、作成して最初に固定パブリック IP アドレスのリソースが必要です。そして、クラスタ内の同じ死ソースグループにあるべきです。
+loadBalancerIP として IP アドレスを指定します。
+クラウド・プロバイダの設定情報ふぁいるにある securityGroupName が存在しているかどうかを確認します。
 
+<!--
 #### Internal load balancer
+-->
+#### 内部ロードバランサ（Internal load balancer）{#internal-load-balancer}
+
+<!--
 In a mixed environment it is sometimes necessary to route traffic from services inside the same VPC.
+-->
+サービスから同じ VPC 内に複数の環境からトラフィックを送る場合があります。
 
+<!--
 In a split-horizon DNS environment you would need two services to be able to route both external and internal traffic to your endpoints.
+-->
+水平分割 DNS 環境では、２つのサービスに対して、外部と内部のトラフィック両方をエンドポイントまで送る必要があります。
 
+<!--
 This can be achieved by adding the following annotations to the service based on cloud provider.
+-->
+実現のためには、以下のアノテーションをクラウド・プロバイダに対応したサービスに追加できます。
 
 {{< tabs name="service_tabs" >}}
-{{% tab name="Default" %}}
+{{% tab name="デフォルト" %}}
+<!--
 Select one of the tabs.
+-->
+タブのどれか１つを選びます。
 {{% /tab %}}
 {{% tab name="GCP" %}}
 ```yaml
@@ -605,8 +850,13 @@ metadata:
         cloud.google.com/load-balancer-type: "Internal"
 [...]
 ```
+<!--
 Use `cloud.google.com/load-balancer-type: "internal"` for masters with version 1.7.0 to 1.7.3.
 For more information, see the [docs](https://cloud.google.com/kubernetes-engine/docs/internal-load-balancing).
+-->
+master のバージョン 1.7.0 から 1.7.3 は `cloud.google.com/load-balancer-type: "internal"`  を使います。
+詳細は [docs](https://cloud.google.com/kubernetes-engine/docs/internal-load-balancing) をご覧ください。
+
 {{% /tab %}}
 {{% tab name="AWS" %}}
 ```yaml
@@ -871,16 +1121,27 @@ spec:
 **Note:** NLB only works with certain instance classes, see the [AWS documentation](http://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html#register-deregister-targets)
 for supported instance types.
 
-
+<!--
 ### External IPs
+-->
+### 外部 IP（External IP） {#external-ip}
 
+<!--
 If there are external IPs that route to one or more cluster nodes, Kubernetes services can be exposed on those
 `externalIPs`. Traffic that ingresses into the cluster with the external IP (as destination IP), on the service port,
 will be routed to one of the service endpoints. `externalIPs` are not managed by Kubernetes and are the responsibility
 of the cluster administrator.
+-->
+１つまたは複数のクラスタ・ノードに送る（route）ための外部 IP（external IP）があれば、Kubernetes サービスは各 `externalIP` に対してサービスを公開します。
+外部の IP からクラスタの ingress（訳者注：内部ネットワーク）に対するトラフィックは、サービスのポートに対するもので、１つまたは複数のエンドポイントに対して送られます。
+`externalIP` は Kubernetes によって管理されず、クラスタ・管理者の責任となります。
 
+<!--
 In the `ServiceSpec`, `externalIPs` can be specified along with any of the `ServiceTypes`.
 In the example below, "`my-service`" can be accessed by clients on "`80.11.12.10:80`"" (`externalIP:port`)
+-->
+`ServiceSpec` 内では、 `externalIP` にはあらゆる `ServiceTypes`を指定できます。
+以下の例では "`my-service`" は "'80.11.12.10:80'" （`externalIP:port`）に関連付けられます。
 
 ```yaml
 kind: Service
@@ -899,35 +1160,70 @@ spec:
   - 80.11.12.10
 ```
 
+<!--
 ## Shortcomings
+-->
+## 欠点 {#shortcomings}
 
+<!--
 Using the userspace proxy for VIPs will work at small to medium scale, but will
 not scale to very large clusters with thousands of Services.  See [the original
 design proposal for portals](http://issue.k8s.io/1107) for more details.
+-->
+VIP に対して名前空間プロキシを使うのは、小規模から中規模のスケールで機能します。
+しかし、何千ものサービスがある大きなクラスタにはスケールできません。
+詳細は [ポータルにあるオリジナルの設計提案](http://issue.k8s.io/1107) をご覧ください。
 
+<!--
 Using the userspace proxy obscures the source-IP of a packet accessing a `Service`.
 This makes some kinds of firewalling impossible.  The iptables proxier does not
 obscure in-cluster source IPs, but it does still impact clients coming through
 a load-balancer or node-port.
+-->
+ユーザ空間プロキシを使うと、`Service` に接続するパケットの送信元 IP が不明瞭になります。
+これによってある種のファイアウォールが使えなくなります。
+iptables はクラスタ内の接続も IP が不明瞭になりますが、ロードバランサやノードのポートに対しても影響があります。
 
+<!--
 The `Type` field is designed as nested functionality - each level adds to the
 previous.  This is not strictly required on all cloud providers (e.g. Google Compute Engine does
 not need to allocate a `NodePort` to make `LoadBalancer` work, but AWS does)
 but the current API requires it.
+-->
+'Type' フィールドはネストした（入れ子になった）機能性のために設計されています。
+正確には全てのクラウド・プロバイダで必要ではありません（例：Google Compute Engine は `LoadBalancer` を動かすのに `NodePort` は不要ですが、AWS では必要です）が、現在の API では必要となります。
 
+<!--
 ## Future work
+-->
+## 今後の対応 {#future-work}
 
+<!--
 In the future we envision that the proxy policy can become more nuanced than
 simple round robin balancing, for example master-elected or sharded.  We also
 envision that some `Services` will have "real" load balancers, in which case the
 VIP will simply transport the packets there.
+-->
+将来的なビジョンとしては、プロキシ方針（ポリシー）によって、シンプルな負荷分散なではなく、より細かな制御を視野に入れています。
+たとえば、マスタの選出やシャード化（sharded）です。
+また、 `Services` が実際のロードバランサになるのも想定しています。
+この場合、VIP は単純にパケットを転送するだけです。
 
+<!--
 We intend to improve our support for L7 (HTTP) `Services`.
+-->
+私達は L7 (HTTP) `Service`  をサポートするように改良するつもりです。
 
+<!--
 We intend to have more flexible ingress modes for `Services` which encompass
 the current `ClusterIP`, `NodePort`, and `LoadBalancer` modes and more.
+-->
+私達は `Service` に対するイングレス・モードをより柔軟にするつもりです。これは現在の `ClusterIP` 、 `NodePort` 、 `LoadBalaner`  モードなどを包括します。
 
+<!--
 ## The gory details of virtual IPs
+-->
+## 仮想 IP の詳しい説明 {#the-gory-deta}
 
 The previous information should be sufficient for many people who just want to
 use `Services`.  However, there is a lot going on behind the scenes that may be
@@ -1008,11 +1304,18 @@ through a load-balancer, though in those cases the client IP does get altered.
 
 Iptables operations slow down dramatically in large scale cluster e.g 10,000 Services. IPVS is designed for load balancing and based on in-kernel hash tables. So we can achieve performance consistency in large number of services from IPVS-based kube-proxy. Meanwhile, IPVS-based kube-proxy has more sophisticated load balancing algorithms (least conns, locality, weighted, persistence).
 
+<!--
 ## API Object
+-->
+## API オブジェクト {#api-object}
 
+<!--
 Service is a top-level resource in the Kubernetes REST API. More details about the
 API object can be found at:
 [Service API object](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/#service-v1-core).
+-->
+サービスとは Kubernetes REST API のなかでトップ・レベルのリソースです。
+API オブジェクトに関する詳しい情報は [サービス API オブジェクト](/docs/reference/generated/kubernetes-api/{{< param "version" >}}/#service-v1-core) にあります。
 
 {{% /capture %}}
 

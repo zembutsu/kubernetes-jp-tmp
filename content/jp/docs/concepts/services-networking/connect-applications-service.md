@@ -3,7 +3,7 @@ reviewers:
 - caesarxuchao
 - lavalamp
 - thockin
-title: Connecting Applications with Services
+title: アプリケーションとサービスの接続
 content_template: templates/concept
 weight: 30
 ---
@@ -12,27 +12,62 @@ weight: 30
 
 {{% capture overview %}}
 
+<!--
 ## The Kubernetes model for connecting containers
+-->
+## コンテナに接続するための Kubernetes モデル
 
+<!--
 Now that you have a continuously running, replicated application you can expose it on a network. Before discussing the Kubernetes approach to networking, it is worthwhile to contrast it with the "normal" way networking works with Docker.
+-->
+これでアプリケーションを継続的に実行し、複製したものをネットワーク上に公開できるようになりました。Kubernetes のネットワーク形成（networking）に関する手法を扱う前に、Docker を使った「通常の」ネットワーク形成との比較は無駄ではないでしょう。
 
+<!--
 By default, Docker uses host-private networking, so containers can talk to other containers only if they are on the same machine. In order for Docker containers to communicate across nodes, there must be allocated ports on the machine’s own IP address, which are then forwarded or proxied to the containers. This obviously means that containers must either coordinate which ports they use very carefully or ports must be allocated dynamically.
+-->
+デフォルトでは、Docker はホスト・プライベート・ネットワーキング（host-private networking）を使います。
+そのため、コンテナは同じマシン上にある時のみ、相互通信できます。
+Docker コンテナがノードを横断して通信するためには、マシン自身の IP アドレス上にポートを割り当てる必要があります。
+それから、コンテナに対して転送またはプロキシされます。
+明らかなのは、コンテナはポートと注意深く調整する必要があるだけでなく、動的に割り当てる必要がありす。
 
+<!--
 Coordinating ports across multiple developers is very difficult to do at scale and exposes users to cluster-level issues outside of their control. Kubernetes assumes that pods can communicate with other pods, regardless of which host they land on. We give every pod its own cluster-private-IP address so you do not need to explicitly create links between pods or mapping container ports to host ports. This means that containers within a Pod can all reach each other's ports on localhost, and all pods in a cluster can see each other without NAT. The rest of this document will elaborate on how you can run reliable services on such a networking model.
+-->
+複数の開発者を横断してポートの調整をするのは、スケールが非常に難しく、ユーザに対する公開も開発者の制御を越えたクラスタ・レベルの課題です。
+Kubernetes はポッドがどのホスト上にあるとしても、他のポッドと通信可能であるとみなします。各ポッドは自身がクラスタのプライベート・IP アドレス（cluster-private-IP）を所有するため、ポッド間のリンクを明示する必要はなく、コンテナのポートをホストポートに割り当てる（マッピング）必要もありません。
+つまり、ポッド内のコンテナはすべてが、ローカルホスト上のポートを通してお互いに通信可能です。
+また、クラスタ内のすべてのポッドはお互いを NAT しなくても見えます。
+このドキュメントの最後では、このようなネットワーク形成モデル上で、どのように信頼できるサービスを実行するか、詳しく述べます。
 
+<!--
 This guide uses a simple nginx server to demonstrate proof of concept. The same principles are embodied in a more complete [Jenkins CI application](https://kubernetes.io/blog/2015/07/strong-simple-ssl-for-kubernetes).
+-->
+このガイドでは概念実証を実施するにあたり、シンプルな nginx サーバを使います。
+同じ原理でより完全に具現化したものが  [Jenkins CI application](https://kubernetes.io/blog/2015/07/strong-simple-ssl-for-kubernetes) です。
+
 
 {{% /capture %}}
 
 {{% capture body %}}
 
+<!--
 ## Exposing pods to the cluster
+-->
+## ポッドをクラスタに対して公開 {#exposing-pods-to-the-cluster}
 
+<!--
 We did this in a previous example, but let's do it once again and focus on the networking perspective. Create an nginx pod, and note that it has a container port specification:
+-->
+こちらは先ほどの例で使いましたが、もう一度ネットワーク機能を見通すため、再び焦点をあてます。
 
 {{< code file="run-my-nginx.yaml" >}}
 
+<!--
 This makes it accessible from any node in your cluster. Check the nodes the pod is running on:
+-->
+これにより、クラスタ上のあらゆるノードから接続できるようにします。
+ポッドを実行中のノードを確認します。
 
 ```shell
 $ kubectl create -f ./run-my-nginx.yaml
@@ -42,7 +77,10 @@ my-nginx-3800858182-jr4a2   1/1       Running   0          13s       10.244.3.4 
 my-nginx-3800858182-kna2y   1/1       Running   0          13s       10.244.2.5    kubernetes-minion-ljyd
 ```
 
+<!--
 Check your pods' IPs:
+-->
+ポッドの IP を確認します。
 
 ```shell
 $ kubectl get pods -l run=my-nginx -o yaml | grep podIP
@@ -50,17 +88,41 @@ $ kubectl get pods -l run=my-nginx -o yaml | grep podIP
     podIP: 10.244.2.5
 ```
 
+<!--
 You should be able to ssh into any node in your cluster and curl both IPs. Note that the containers are *not* using port 80 on the node, nor are there any special NAT rules to route traffic to the pod. This means you can run multiple nginx pods on the same node all using the same containerPort and access them from any other pod or node in your cluster using IP. Like Docker, ports can still be published to the host node's interfaces, but the need for this is radically diminished because of the networking model.
+-->
+クラスタ上にあるノードに SSH し、両方の IP に curl を実行しましょう。
+コンテナはノード上のポート 80 を使って *いません* し、また、特別な NAT ルールでポッドに対するトラフィックを送っていないのに注目します。
+つまり、同じノード上で複数の nginx ポッドを実行するにあたり、すべて同じ containerPort が使え、IP を使えばクラスタ上の他のポッドやあらゆるノードから接続します。
+Docker のように、ポートはホスト・ノードのインターフェースに対して公開されたままですが、これが必要となるのはネットワーク形成モデルによって完全に軽減されました。
 
+<!--
 You can read more about [how we achieve this](/docs/concepts/cluster-administration/networking/#how-to-achieve-this) if you're curious.
+-->
+もし興味がありましたら、 [どのように達成したか](/jp/docs/concepts/cluster-administration/networking/#how-to-achieve-this) をご覧ください。
 
+<!--
 ## Creating a Service
+-->
+## サービスの作成 {#creating-a-service}
 
+<!--
 So we have pods running nginx in a flat, cluster wide, address space. In theory, you could talk to these pods directly, but what happens when a node dies? The pods die with it, and the Deployment will create new ones, with different IPs. This is the problem a Service solves.
+-->
+nginx ポッドを平らに、クラスタに広く、場所を割り当てます。
+理論的には、各ポッドと直接通信できますが、ノードが死んだらどうなるでしょうか。
+ポッドも一緒に死にますが、デプロイメントは新しいポッドを別の IP で作成します。
+サービスの解決にあたって、これは問題です。
 
+<!--
 A Kubernetes Service is an abstraction which defines a logical set of Pods running somewhere in your cluster, that all provide the same functionality. When created, each Service is assigned a unique IP address (also called clusterIP). This address is tied to the lifespan of the Service, and will not change while the Service is alive. Pods can be configured to talk to the Service, and know that communication to the Service will be automatically load-balanced out to some pod that is a member of the Service.
+-->
+Kubernetes サービスはポッドの集まりををクラスタ上のどこで実行するかという定義をする抽象概念です。
 
+
+<!--
 You can create a Service for your 2 nginx replicas with `kubectl expose`:
+-->
 
 ```shell
 $ kubectl expose deployment/my-nginx
